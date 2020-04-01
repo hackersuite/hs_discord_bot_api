@@ -1,0 +1,63 @@
+{
+  "name": "hs_discord_bot_api",
+  "version": "0.0.1",
+  "description": "The API for the HackerSuite Discord bot",
+  "scripts": {
+    "prebuild": "npm run test",
+    "build": "rimraf dist && tsc",
+    "test": "eslint src --ext .ts",
+    "start": "npm run build && node dist | pino-pretty"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/unicsmcr/hs_discord_bot_api.git"
+  },
+  "keywords": [
+    "Discord",
+    "Hackathon",
+    "StudentHack",
+    "API"
+  ],
+  "author": "Amish Shah <amishshah.2k@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/unicsmcr/hs_discord_bot_api/issues"
+  },
+  "homepage": "https://github.com/unicsmcr/hs_discord_bot_api#readme",
+  "devDependencies": {
+    "@types/node": "^13.9.5",
+    "@types/pino": "^5.17.0",
+    "@types/ws": "^7.2.3",
+    "@typescript-eslint/eslint-plugin": "^2.25.0",
+    "@typescript-eslint/parser": "^2.25.0",
+    "eslint": "^6.8.0",
+    "eslint-config-marine": "^6.0.0",
+    "pino-pretty": "^3.6.1",
+    "rimraf": "^3.0.2",
+    "typescript": "^3.8.3"
+  },
+  "eslintConfig": {
+    "extends": "marine/node",
+    "parserOptions": {
+      "project": "tsconfig.eslint.json"
+    },
+    "env": {
+      "jest": true
+    },
+    "rules": {
+      "@typescript-eslint/no-require-imports": "off",
+      "@typescript-eslint/no-var-requires": "off"
+    }
+  },
+  "dependencies": {
+    "@types/express": "^4.17.3",
+    "@types/node-fetch": "^2.5.5",
+    "express": "^4.17.1",
+    "form-data": "^3.0.0",
+    "node-fetch": "^2.6.0",
+    "pino": "^5.17.0",
+    "reflect-metadata": "^0.1.13",
+    "sqlite3": "^4.1.1",
+    "typeorm": "^0.2.24"
+  }
+}
