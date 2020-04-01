@@ -2,7 +2,7 @@ import 'reflect-metadata';
 import * as express from 'express';
 import { UserController, TeamController } from './controllers';
 import RouteHandler, { ExpressHandler } from './RouteHandler';
-import { UsersRoute, UserRoute, TeamsRoute } from './routes';
+import { UsersRoute, UserRoute, TeamsRoute, TeamRoute } from './routes';
 import { createConnection, ConnectionOptions, Connection } from 'typeorm';
 import { User } from './entities/User';
 import { Team } from './entities/Team';
@@ -78,6 +78,7 @@ export default class HackathonAPI {
 			this.addRoute(new UsersRoute(this));
 			this.addRoute(new UserRoute(this));
 			this.addRoute(new TeamsRoute(this));
+			this.addRoute(new TeamRoute(this));
 			this.express.listen(this.options.api.port, resolve);
 			this.express.on('error', err => {
 				reject(err);

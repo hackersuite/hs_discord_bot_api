@@ -153,3 +153,27 @@ this will do nothing and still succeed.
     }
 }
 ```
+
+### `GET /api/v1/teams/:id`
+
+Returns `APITeam` for the team with the given Auth ID. If one cannot be found, then the response is a 404
+with a null team property.
+
+**Response (200):**
+```js
+{
+    "team": {
+        "authId": "8a5460dc22680803b7462b67",
+        "creator": "5e615a6a22664303b48199df",
+        "name": "Team Name Here",
+        "teamNumber": 1
+    }
+}
+```
+
+**Response (404):**
+```js
+{
+    "team": null
+}
+```

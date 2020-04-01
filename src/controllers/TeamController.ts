@@ -39,6 +39,23 @@ export default class TeamController {
 		return teams;
 	}
 
+	public async getTeam(authId: string) {
+		const db = this.getDB();
+
+		try {
+			const [dbTeam, authTeam] = await Promise.all([
+				db.getRepository(Team).findOne({ authId }),
+				auth.getTeam(this.api.options.hsAuth.token, authId)
+			]);
+			if (!dbTeam || !authTeam) throw new Error('Team not found');
+			return this.transformAuthTeam(authTeam, dbTeam.teamNumber);
+		} catch (error) {
+			// auth client + above throw the same error for non-existant team
+			if (error.message !== 'Team not found') throw error;
+		}
+		return null;
+	}
+
 	public async putTeam(authId: string) {
 		const repo = this.getDB().getRepository(Team);
 		let team = await repo.findOne({ authId });

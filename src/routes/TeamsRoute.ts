@@ -26,12 +26,9 @@ export class TeamsRoute implements RouteHandler {
 		const { authId, full } = req.body as PutBody;
 		const team = await this.api.controllers.team.putTeam(authId);
 		if (full === true) {
-			/*
-			todo
 			return res.json({
-				team: await this.api.controllers.team.getTeam(authId);
+				team: await this.api.controllers.team.getTeam(authId)
 			});
-			*/
 		}
 		res.json({
 			team: {
