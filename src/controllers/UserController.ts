@@ -11,7 +11,7 @@ export interface APIUser {
 	team?: string;
 }
 
-export default class UserController {
+export class UserController {
 	private readonly api: HackathonAPI;
 
 	public constructor(api: HackathonAPI) {

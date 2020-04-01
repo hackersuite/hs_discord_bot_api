@@ -9,7 +9,7 @@ export interface APITeam {
 	teamNumber: number;
 }
 
-export default class TeamController {
+export class TeamController {
 	private readonly api: HackathonAPI;
 
 	public constructor(api: HackathonAPI) {
