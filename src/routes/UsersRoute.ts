@@ -31,7 +31,7 @@ export class UsersRoute implements RouteHandler {
 				user: await this.api.controllers.user.getUser(discordId)
 			});
 		}
-		res.status(200).json({
+		res.json({
 			user: {
 				authId: user.authId,
 				discordId: user.discordId

@@ -130,3 +130,26 @@ Returns `APITeam[]` of all the linked teams, i.e.
     ]
 }
 ```
+
+### `PUT /api/v1/teams`
+
+Creates a link to a hs_auth team (assigns a teamNumber to a team ID). If the team is already linked,
+this will do nothing and still succeed.
+
+**Request (JSON body):**
+
+- `authId`: string
+- `full?`: boolean - if true, then a full APITeam will be returned.
+
+**Response:**
+```js
+{
+    "team": {
+        "authId": "8a5460dc22680803b7462b67",
+        // the following properties are ONLY provided if full: true is passed in the request body!
+        "creator": "5e615a6a22664303b48199df",
+        "name": "Team Name Here",
+        "teamNumber": 1
+    }
+}
+```

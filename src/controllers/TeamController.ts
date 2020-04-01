@@ -39,6 +39,16 @@ export default class TeamController {
 		return teams;
 	}
 
+	public async putTeam(authId: string) {
+		const repo = this.getDB().getRepository(Team);
+		let team = await repo.findOne({ authId });
+		if (team) return { authId };
+		team = new Team();
+		team.authId = authId;
+		await repo.save(team);
+		return { authId };
+	}
+
 	private transformAuthTeam(team: auth.Team, teamNumber: number): APITeam {
 		return {
 			authId: team._id,
