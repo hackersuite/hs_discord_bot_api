@@ -12,5 +12,7 @@
 		"src/**/*.test.js",
 		"src/**/*.spec.js"
 	],
-	"exclude": []
+	"exclude": [
+		"bin/start.js"
+	]
 }

@@ -29,6 +29,7 @@
 		"src/**/*.test.ts",
 		"src/**/*.spec.ts",
 		"src/**/*.test.js",
-		"src/**/*.spec.js"
+		"src/**/*.spec.js",
+		"bin/start.js"
 	]
 }
