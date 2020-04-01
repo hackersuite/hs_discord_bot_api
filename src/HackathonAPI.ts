@@ -1,8 +1,8 @@
 import 'reflect-metadata';
 import * as express from 'express';
-import { UserController } from './controllers';
+import { UserController, TeamController } from './controllers';
 import RouteHandler, { ExpressHandler } from './RouteHandler';
-import { UsersRoute, UserRoute } from './routes';
+import { UsersRoute, UserRoute, TeamsRoute } from './routes';
 import { createConnection, ConnectionOptions, Connection } from 'typeorm';
 import { User } from './entities/User';
 import { Team } from './entities/Team';
@@ -25,6 +25,7 @@ export interface HackathonAPIOptions {
 
 interface Controllers {
 	user: UserController;
+	team: TeamController;
 }
 
 const VERBS: (keyof express.Router & keyof RouteHandler)[] = [
@@ -47,7 +48,8 @@ export default class HackathonAPI {
 		this.options = options;
 
 		this.controllers = {
-			user: new UserController(this)
+			user: new UserController(this),
+			team: new TeamController(this)
 		};
 
 		this.handlers = [];
@@ -75,6 +77,7 @@ export default class HackathonAPI {
 			this.router.use(express.json());
 			this.addRoute(new UsersRoute(this));
 			this.addRoute(new UserRoute(this));
+			this.addRoute(new TeamsRoute(this));
 			this.express.listen(this.options.api.port, resolve);
 			this.express.on('error', err => {
 				reject(err);

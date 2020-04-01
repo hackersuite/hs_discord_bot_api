@@ -18,6 +18,13 @@
 - `name`: string - the user's name
 - `team?`: string - the user's team, if they're in one
 
+### `APITeam`
+
+- `authId`: string - the ID of the team under hs_auth
+- `name`: string - the name of the team
+- `creator`: string - the hs_auth ID of the creator of the team
+- `teamNumber`: number - the team number in Discord (starts at 1)
+
 ## Routes
 
 ### `GET /api/v1/users`
@@ -103,4 +110,23 @@ The response is an empty JSON object.
 **Response:**
 ```js
 {}
+```
+
+### `GET /api/v1/teams`
+
+Returns `APITeam[]` of all the linked teams, i.e.
+
+**Response:**
+```js
+{
+    "teams": [
+        {
+            "authId": "5e615c6a22664303b48199cf",
+            "creator": "5e615a6a22664303b48199df",
+            "name": "Team Name Here",
+            "teamNumber": 1
+        },
+        // ...
+    ]
+}
 ```
