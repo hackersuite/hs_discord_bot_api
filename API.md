@@ -177,3 +177,23 @@ with a null team property.
     "team": null
 }
 ```
+
+
+### `GET /api/v1/discord?code=[...]&state=[...]`
+
+Used to identify users. Once users have authenticated with Discord, they are redirected here.
+
+The `code` query parameter is provided by the Discord OAuth2 system.
+
+The `state` query parameter stores the user's hs_auth ID to identify them on that service. The state is also used to verify that the request originated from the HackerSuite services.
+
+The user's Discord account is linked to their HackerSuite account, and the user is added to the Hackathon guild.
+
+If all of this happens successfully, the API responds like so:
+
+**Response (200):**
+```js
+{
+    "message": "ok"
+}
+```
