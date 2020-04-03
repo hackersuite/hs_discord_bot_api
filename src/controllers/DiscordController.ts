@@ -2,6 +2,8 @@ import HackathonAPI from '../HackathonAPI';
 import { createHmac } from 'crypto';
 import axios from 'axios';
 import { stringify } from 'querystring';
+import { Rest, TokenType } from '@spectacles/rest';
+import { Agent } from 'https';
 
 const API_BASE = 'https://discordapp.com/api/v6';
 
@@ -29,9 +31,13 @@ export interface APITeam {
 
 export class DiscordController {
 	private readonly api: HackathonAPI;
+	private readonly rest: Rest;
+	private readonly agent: Agent;
 
 	public constructor(api: HackathonAPI) {
 		this.api = api;
+		this.agent = new Agent({ keepAlive: true });
+		this.rest = new Rest(api.options.discord.botToken, { agent: this.agent });
 	}
 
 	public async processOAuth2(code: string, state: string) {
@@ -43,24 +49,17 @@ export class DiscordController {
 	}
 
 	private async fetchUserDetails(accessToken: string) {
-		const res = await axios.get(`${API_BASE}/users/@me`, {
-			headers: {
-				Authorization: `Bearer ${accessToken}`
-			}
+		const client = new Rest(accessToken, {
+			tokenType: TokenType.BEARER,
+			agent: this.agent
 		});
-		return res.data as DiscordUser;
+		return await client.get(`/users/@me`) as DiscordUser;
 	}
 
 	private addUserToGuild(accessToken: string, userId: string) {
-		return axios.put(`${API_BASE}/guilds/${this.api.options.discord.guildId}/members/${userId}`,
-			{
-				access_token: accessToken
-			},
-			{
-				headers: {
-					Authorization: `Bot ${this.api.options.discord.botToken}`
-				}
-			});
+		return this.rest.put(`/guilds/${this.api.options.discord.guildId}/members/${userId}`, {
+			access_token: accessToken
+		});
 	}
 
 	private async getAccessToken(code: string) {
@@ -71,7 +70,7 @@ export class DiscordController {
 			code,
 			redirect_uri: this.api.options.discord.redirectUri,
 			scope: 'identify guilds.join'
-		}));
+		}), { httpsAgent: this.agent });
 		const data = res.data as TokenResponse;
 		return data.access_token;
 	}

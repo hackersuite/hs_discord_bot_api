@@ -50,6 +50,7 @@
     }
   },
   "dependencies": {
+    "@spectacles/rest": "^0.6.1",
     "@types/express": "^4.17.3",
     "@types/node-fetch": "^2.5.5",
     "@unicsmcr/hs_auth_client": "^1.2.1",

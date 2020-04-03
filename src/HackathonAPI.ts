@@ -1,5 +1,5 @@
 import 'reflect-metadata';
-import * as express from 'express';
+import express from 'express';
 import { UserController, TeamController, DiscordController } from './controllers';
 import RouteHandler, { ExpressHandler } from './RouteHandler';
 import { UsersRoute, UserRoute, TeamsRoute, TeamRoute, DiscordRoute } from './routes';

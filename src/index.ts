@@ -1,5 +1,5 @@
 import HackathonAPI, { HackathonAPIOptions } from './HackathonAPI';
-import * as pino from 'pino';
+import pino from 'pino';
 const config = require('../data/config.json') as HackathonAPIOptions;
 
 const baseLogger = pino();
