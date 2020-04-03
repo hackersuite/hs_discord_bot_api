@@ -1,8 +1,8 @@
 import 'reflect-metadata';
-import * as express from 'express';
-import { UserController, TeamController } from './controllers';
+import express from 'express';
+import { UserController, TeamController, DiscordController } from './controllers';
 import RouteHandler, { ExpressHandler } from './RouteHandler';
-import { UsersRoute, UserRoute, TeamsRoute, TeamRoute } from './routes';
+import { UsersRoute, UserRoute, TeamsRoute, TeamRoute, DiscordRoute } from './routes';
 import { createConnection, ConnectionOptions, Connection } from 'typeorm';
 import { User } from './entities/User';
 import { Team } from './entities/Team';
@@ -21,11 +21,20 @@ export interface HackathonAPIOptions {
 		base: pino.Logger;
 		api: pino.Logger;
 	};
+	discord: {
+		hmacKey: string;
+		clientId: string;
+		clientSecret: string;
+		redirectUri: string;
+		guildId: string;
+		botToken: string;
+	};
 }
 
 interface Controllers {
 	user: UserController;
 	team: TeamController;
+	discord: DiscordController;
 }
 
 const VERBS: (keyof express.Router & keyof RouteHandler)[] = [
@@ -49,7 +58,8 @@ export default class HackathonAPI {
 
 		this.controllers = {
 			user: new UserController(this),
-			team: new TeamController(this)
+			team: new TeamController(this),
+			discord: new DiscordController(this)
 		};
 
 		this.handlers = [];
@@ -79,6 +89,7 @@ export default class HackathonAPI {
 			this.addRoute(new UserRoute(this));
 			this.addRoute(new TeamsRoute(this));
 			this.addRoute(new TeamRoute(this));
+			this.addRoute(new DiscordRoute(this));
 			this.express.listen(this.options.api.port, resolve);
 			this.express.on('error', err => {
 				reject(err);
