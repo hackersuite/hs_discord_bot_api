@@ -9,5 +9,13 @@
 	"db": {
 		"type": "sqlite",
 		"database": "./data/database.sqlite"
+	},
+	"discord": {
+		"hmacKey": "Random string that matches the hmacKey in hs_hub",
+		"clientId": "Discord Client ID for the application",
+		"clientSecret": "The secret for the application",
+		"redirectUri": "http://localhost:8020/user/discord_authentication",
+		"guildId": "ID of the Discord Server",
+		"botToken": "Token for the Discord bot"
 	}
 }
