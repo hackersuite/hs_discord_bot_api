@@ -1,0 +1,17 @@
+version: '2.1'
+services:
+  hs_discord_bot_api:
+    image: hs_discord_bot_api:latest
+    volumes:
+      - .:/usr/src/app
+      - /usr/src/app/node_modules
+    ports:
+      - "8082:8082"
+    networks:
+      - internal
+
+# The network allows multiple containers to connect together
+networks:
+  # internal network for hs_hub services
+  internal:
+    driver: bridge
