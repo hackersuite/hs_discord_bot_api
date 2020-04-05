@@ -4,6 +4,8 @@ import axios from 'axios';
 import { stringify } from 'querystring';
 import { Rest, TokenType } from '@spectacles/rest';
 import { Agent } from 'https';
+import { DiscordResource } from '../entities/DiscordResource';
+import { CreateGuildRoleData, RoleData } from '../utils/DiscordTypes';
 
 const API_BASE = 'https://discordapp.com/api/v6';
 
@@ -46,6 +48,35 @@ export class DiscordController {
 		const user = await this.fetchUserDetails(accessToken);
 		await this.api.controllers.user.saveUser(user.id, authId);
 		await this.addUserToGuild(accessToken, user.id);
+	}
+
+	private saveResource(id: string, discordId: string) {
+		const resource = new DiscordResource();
+		resource.id = id;
+		resource.discordId = discordId;
+		return this.api.db.getRepository(DiscordResource).save(resource);
+	}
+
+	private async getResource(id: string) {
+		return (await this.api.db.getRepository(DiscordResource).findOne({ where: { id } }))?.discordId;
+	}
+
+	private async createRole(resourceId: string, data: CreateGuildRoleData) {
+		const role: RoleData = await this.rest.post(`/guilds/${this.api.options.discord.guildId}/roles`, data);
+		await this.saveResource(resourceId, role.id);
+		return { id: resourceId, discordId: role.id, role };
+	}
+
+	private async getOrCreateRole(resourceId: string, data: CreateGuildRoleData) {
+		await this.getResource(resourceId) || this.createRole(resourceId, data);
+	}
+
+	public ensureBasicRoles() {
+		return Promise.all([
+			this.getOrCreateRole('role.organiser', { name: 'Organiser', hoist: true, position: 10 }),
+			this.getOrCreateRole('role.volunteer', { name: 'Volunteer', position: 9 }),
+			this.getOrCreateRole('role.attendee', { name: 'Attendee', position: 8 })
+		]);
 	}
 
 	private async fetchUserDetails(accessToken: string) {
