@@ -37,25 +37,38 @@ export class DiscordController {
 	}
 
 	public async processOAuth2(code: string, state: string) {
+		// Validate and get the user's Auth ID
 		const authId = this.validateState(state);
+		// Swap the OAuth2 code for an access token
 		const accessToken = await this.getAccessToken(code);
-		const user = await this.fetchUserDetails(accessToken);
-		await this.api.controllers.user.saveUser(user.id, authId);
-		const authUser = await this.api.controllers.user.getUser(user.id);
-		if (!authUser) throw new Error('No auth user!');
-		const teamId = authUser.team;
-		const roles = [await this.getAuthRole(authUser.authLevel)];
-		if (teamId && Number(teamId) !== 0) {
-			await this.api.controllers.team.putTeam(teamId);
-			const team = await this.api.controllers.team.getTeam(teamId);
-			if (team) {
-				await this.ensureTeamState(team);
-				roles.push(await this.getResourceOrFail(`role.teams.${team.teamNumber}`));
-			}
+		// Fetch the details of the user's Discord account using the token
+		const discordUser = await this.fetchUserDetails(accessToken);
+		// Link the Discord account to the Auth ID
+		await this.api.controllers.user.saveUser(discordUser.id, authId);
+
+		// Fetch all the hs_auth details of the user
+		const apiUser = await this.api.controllers.user.getUser(discordUser.id);
+		if (!apiUser) throw new Error('No auth user!');
+
+		// Create an array for the roles the user should have, starting with their auth level
+		const roles = [await this.getAuthRole(apiUser.authLevel)];
+
+		// If the user is in a team
+		if (apiUser.team) {
+			// Link their team to the database
+			await this.api.controllers.team.putTeam(apiUser.team);
+			// Fetch the hs_auth details about the team
+			const team = await this.api.controllers.team.getTeam(apiUser.team);
+			if (!team) throw new Error('Team was not saved properly!');
+			// Ensure that the user's team has their roles and channels created
+			await this.ensureTeamState(team);
+			// Add the team's role to the roles list
+			roles.push(await this.getResourceOrFail(`role.teams.${team.teamNumber}`));
 		}
-		const res = await this.addUserToGuild(accessToken, user.id, roles);
+		const res = await this.addUserToGuild(accessToken, discordUser.id, roles);
+		// If the user is already a member of the guild, then we get an empty response
 		if (!res.user) {
-			await this.patchMember(user.id, { roles });
+			await this.patchMember(discordUser.id, { roles });
 		}
 	}
 
