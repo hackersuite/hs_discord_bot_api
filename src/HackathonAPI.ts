@@ -6,6 +6,7 @@ import * as routes from './routes';
 import { createConnection, ConnectionOptions, Connection } from 'typeorm';
 import { User } from './entities/User';
 import { Team } from './entities/Team';
+import { DiscordResource } from './entities/DiscordResource';
 import pino from 'pino';
 
 export interface HackathonAPIOptions {
@@ -73,7 +74,7 @@ export default class HackathonAPI {
 		this.options.loggers.base.info('Starting Hackathon API server...');
 		this.db = await createConnection({
 			...this.options.db,
-			entities: [User, Team],
+			entities: [User, Team, DiscordResource],
 			logging: false,
 			synchronize: true
 		});
