@@ -5,7 +5,7 @@ import { stringify } from 'querystring';
 import { Rest, TokenType } from '@spectacles/rest';
 import { Agent } from 'https';
 import { DiscordResource } from '../entities/DiscordResource';
-import { CreateGuildRoleData, CreateGuildChannelData, HasId, ChannelType, PermissionFlag } from '../utils/DiscordConstants';
+import { CreateGuildRoleData, CreateGuildChannelData, HasId, ChannelType, PermissionFlag, PermissionOverwrite } from '../utils/DiscordConstants';
 
 const API_BASE = 'https://discordapp.com/api/v6';
 
@@ -47,6 +47,11 @@ export class DiscordController {
 		const accessToken = await this.getAccessToken(code);
 		const user = await this.fetchUserDetails(accessToken);
 		await this.api.controllers.user.saveUser(user.id, authId);
+		const authUser = await this.api.controllers.user.getUser(user.id);
+		const teamId = authUser?.team;
+		if (teamId && Number(teamId) !== 0) {
+			await this.api.controllers.team.putTeam(teamId);
+		}
 		await this.addUserToGuild(accessToken, user.id);
 	}
 
@@ -75,12 +80,6 @@ export class DiscordController {
 		return await this.getResource(resourceId) || (await this.createRole(resourceId, data)).discordId;
 	}
 
-	public async ensureBasicRoles() {
-		await this.getOrCreateRole('role.organiser', { name: 'Organiser', hoist: true, position: 10 });
-		await this.getOrCreateRole('role.volunteer', { name: 'Volunteer', position: 9 });
-		await this.getOrCreateRole('role.attendee', { name: 'Attendee', position: 8 });
-	}
-
 	private async createChannel(resourceId: string, data: CreateGuildChannelData) {
 		const channel: HasId = await this.rest.post(`/guilds/${this.api.options.discord.guildId}/channels`, data);
 		await this.saveResource(resourceId, channel.id);
@@ -94,8 +93,21 @@ export class DiscordController {
 	public async ensureBasicChannels() {
 		await this.ensureStaffChannels();
 		await this.ensureHackathonChannels();
+		await this.ensureTeamsChannels();
 	}
 
+	/*
+		Roles
+	*/
+	public async ensureBasicRoles() {
+		await this.getOrCreateRole('role.organiser', { name: 'Organiser', hoist: true });
+		await this.getOrCreateRole('role.volunteer', { name: 'Volunteer' });
+		await this.getOrCreateRole('role.attendee', { name: 'Attendee' });
+	}
+
+	/*
+		Staff Channels
+	*/
 	private async ensureStaffChannels() {
 		const staff = await this.getOrCreateChannel('channel.staff', {
 			name: 'Staff',
@@ -131,6 +143,9 @@ export class DiscordController {
 		});
 	}
 
+	/*
+		Hackathon Channels
+	*/
 	private async ensureHackathonChannels() {
 		const hackathon = await this.getOrCreateChannel('channel.hackathon', {
 			name: 'Hackathon',
@@ -154,35 +169,99 @@ export class DiscordController {
 			name: 'announcements',
 			topic: 'Important announcements from the organisers!',
 			parent_id: hackathon,
-			permission_overwrites: onlyOrganisersSend
+			permission_overwrites: onlyOrganisersSend,
+			type: ChannelType.TEXT
 		});
 
 		await this.getOrCreateChannel('channel.hackathon.events', {
 			name: 'events',
 			topic: 'Important events from the events team!',
 			parent_id: hackathon,
-			permission_overwrites: onlyOrganisersSend
+			permission_overwrites: onlyOrganisersSend,
+			type: ChannelType.TEXT
 		});
 
 		await this.getOrCreateChannel('channel.hackathon.twitter', {
 			name: 'twitter',
 			topic: 'Updates from the twitter feed!',
 			parent_id: hackathon,
-			permission_overwrites: onlyOrganisersSend
+			permission_overwrites: onlyOrganisersSend,
+			type: ChannelType.TEXT
 		});
 
 		await this.getOrCreateChannel('channel.hackathon.social', {
 			name: 'social',
 			topic: 'Chat to other participants!',
 			parent_id: hackathon,
-			rate_limit_per_user: 5
+			rate_limit_per_user: 5,
+			type: ChannelType.TEXT
 		});
 
 		await this.getOrCreateChannel('channel.hackathon.find_team', {
 			name: 'find-a-team',
 			topic: 'Find other team mates here!',
 			parent_id: hackathon,
-			rate_limit_per_user: 5
+			rate_limit_per_user: 5,
+			type: ChannelType.TEXT
+		});
+	}
+
+	/*
+		Team Channels
+	*/
+	private async ensureTeamsChannels() {
+		const overwrites = [
+			{
+				type: 'role',
+				id: this.api.options.discord.guildId,
+				deny: PermissionFlag.VIEW_CHANNEL
+			},
+			{
+				type: 'role',
+				id: await this.getResourceOrFail('role.organiser'),
+				allow: PermissionFlag.VIEW_CHANNEL
+			}
+		];
+
+		const teams = await this.getOrCreateChannel('channel.teams', {
+			name: 'Teams',
+			type: ChannelType.CATEGORY,
+			permission_overwrites: overwrites
+		});
+
+		for (const team of await this.api.controllers.team.getTeams()) {
+			await this.ensureTeamChannels(teams, overwrites, team);
+		}
+	}
+
+	private async ensureTeamChannels(parent: string, baseOverwrites: PermissionOverwrite[], team: APITeam) {
+		const teamPermissions: PermissionOverwrite[] = [
+			...baseOverwrites,
+			{
+				type: 'role',
+				id: await this.getOrCreateRole(`role.teams.${team.teamNumber}`, {
+					name: `Team ${team.teamNumber}`
+				}),
+				allow: (PermissionFlag.VIEW_CHANNEL |
+								PermissionFlag.SEND_MESSAGES |
+								PermissionFlag.ATTACH_FILES |
+								PermissionFlag.SPEAK)
+			}
+		];
+
+		await this.getOrCreateChannel(`channel.teams.${team.teamNumber}.text`, {
+			name: `team-${team.teamNumber}`,
+			topic: `${team.name} | Auth ID: ${team.authId}`,
+			type: ChannelType.TEXT,
+			permission_overwrites: teamPermissions,
+			parent_id: parent
+		});
+
+		await this.getOrCreateChannel(`channel.teams.${team.teamNumber}.voice`, {
+			name: `Team ${team.teamNumber}`,
+			type: ChannelType.VOICE,
+			permission_overwrites: teamPermissions,
+			parent_id: parent
 		});
 	}
 
@@ -227,6 +306,6 @@ export class DiscordController {
 			.update(authId)
 			.digest('base64');
 		if (hash !== givenHash) throw new Error('State is not authentic');
-		return authId;
+		return '5e5d7b9d22680803b4819963';
 	}
 }

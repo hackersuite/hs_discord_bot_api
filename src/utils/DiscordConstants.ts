@@ -4,7 +4,7 @@ export interface CreateGuildRoleData {
 	color?: number;
 	hoist?: boolean;
 	mentionable?: boolean;
-	position: number;
+	position?: number;
 }
 
 export enum ChannelType {
@@ -64,7 +64,7 @@ export interface PermissionOverwrite {
 
 export interface CreateGuildChannelData {
 	name: string;
-	type?: ChannelType;
+	type: ChannelType;
 	topic?: string;
 	bitrate?: number;
 	user_limit?: number;
