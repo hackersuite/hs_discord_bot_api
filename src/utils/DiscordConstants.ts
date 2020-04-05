@@ -55,6 +55,13 @@ export interface HasId {
 	id: string;
 }
 
+// not a full user, only properties we're interested in
+// see https://discordapp.com/developers/docs/resources/user#user-object
+export interface DiscordUser {
+	id: string;
+	locale: string;
+}
+
 export interface PermissionOverwrite {
 	id: string;
 	type: string;

@@ -5,7 +5,7 @@ import { stringify } from 'querystring';
 import { Rest, TokenType } from '@spectacles/rest';
 import { Agent } from 'https';
 import { DiscordResource } from '../entities/DiscordResource';
-import { CreateGuildRoleData, CreateGuildChannelData, HasId, ChannelType, PermissionFlag, PermissionOverwrite } from '../utils/DiscordConstants';
+import { CreateGuildRoleData, CreateGuildChannelData, HasId, ChannelType, PermissionFlag, PermissionOverwrite, DiscordUser } from '../utils/DiscordConstants';
 
 const API_BASE = 'https://discordapp.com/api/v6';
 
@@ -17,14 +17,7 @@ interface TokenResponse {
 	scope: string;
 }
 
-// not a full user, only properties we're interested in
-// see https://discordapp.com/developers/docs/resources/user#user-object
-interface DiscordUser {
-	id: string;
-	locale: string;
-}
-
-export interface APITeam {
+export interface AuthTeam {
 	authId: string;
 	name: string;
 	creator: string;
@@ -234,7 +227,7 @@ export class DiscordController {
 		}
 	}
 
-	private async ensureTeamChannels(parent: string, baseOverwrites: PermissionOverwrite[], team: APITeam) {
+	private async ensureTeamChannels(parent: string, baseOverwrites: PermissionOverwrite[], team: AuthTeam) {
 		const teamPermissions: PermissionOverwrite[] = [
 			...baseOverwrites,
 			{
