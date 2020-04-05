@@ -5,7 +5,7 @@ import { stringify } from 'querystring';
 import { Rest, TokenType } from '@spectacles/rest';
 import { Agent } from 'https';
 import { DiscordResource } from '../entities/DiscordResource';
-import { CreateGuildRoleData, RoleData } from '../utils/DiscordTypes';
+import { CreateGuildRoleData, CreateGuildChannelData, HasId, ChannelType, PermissionFlag } from '../utils/DiscordConstants';
 
 const API_BASE = 'https://discordapp.com/api/v6';
 
@@ -61,22 +61,129 @@ export class DiscordController {
 		return (await this.api.db.getRepository(DiscordResource).findOne({ where: { id } }))?.discordId;
 	}
 
+	private async getResourceOrFail(id: string) {
+		return (await this.api.db.getRepository(DiscordResource).findOneOrFail({ where: { id } })).discordId;
+	}
+
 	private async createRole(resourceId: string, data: CreateGuildRoleData) {
-		const role: RoleData = await this.rest.post(`/guilds/${this.api.options.discord.guildId}/roles`, data);
+		const role: HasId = await this.rest.post(`/guilds/${this.api.options.discord.guildId}/roles`, data);
 		await this.saveResource(resourceId, role.id);
 		return { id: resourceId, discordId: role.id, role };
 	}
 
 	private async getOrCreateRole(resourceId: string, data: CreateGuildRoleData) {
-		await this.getResource(resourceId) || this.createRole(resourceId, data);
+		return await this.getResource(resourceId) || (await this.createRole(resourceId, data)).discordId;
 	}
 
-	public ensureBasicRoles() {
-		return Promise.all([
-			this.getOrCreateRole('role.organiser', { name: 'Organiser', hoist: true, position: 10 }),
-			this.getOrCreateRole('role.volunteer', { name: 'Volunteer', position: 9 }),
-			this.getOrCreateRole('role.attendee', { name: 'Attendee', position: 8 })
-		]);
+	public async ensureBasicRoles() {
+		await this.getOrCreateRole('role.organiser', { name: 'Organiser', hoist: true, position: 10 });
+		await this.getOrCreateRole('role.volunteer', { name: 'Volunteer', position: 9 });
+		await this.getOrCreateRole('role.attendee', { name: 'Attendee', position: 8 });
+	}
+
+	private async createChannel(resourceId: string, data: CreateGuildChannelData) {
+		const channel: HasId = await this.rest.post(`/guilds/${this.api.options.discord.guildId}/channels`, data);
+		await this.saveResource(resourceId, channel.id);
+		return { id: resourceId, discordId: channel.id, channel };
+	}
+
+	private async getOrCreateChannel(resourceId: string, data: CreateGuildChannelData) {
+		return await this.getResource(resourceId) || (await this.createChannel(resourceId, data)).discordId;
+	}
+
+	public async ensureBasicChannels() {
+		await this.ensureStaffChannels();
+		await this.ensureHackathonChannels();
+	}
+
+	private async ensureStaffChannels() {
+		const staff = await this.getOrCreateChannel('channel.staff', {
+			name: 'Staff',
+			type: ChannelType.CATEGORY,
+			permission_overwrites: [
+				{
+					type: 'role',
+					id: this.api.options.discord.guildId,
+					deny: PermissionFlag.VIEW_CHANNEL
+				},
+				{
+					type: 'role',
+					id: await this.getResourceOrFail('role.volunteer'),
+					allow: PermissionFlag.VIEW_CHANNEL
+				},
+				{
+					type: 'role',
+					id: await this.getResourceOrFail('role.organiser'),
+					allow: PermissionFlag.VIEW_CHANNEL
+				}
+			]
+		});
+		await this.getOrCreateChannel('channel.staff.discussion', {
+			name: 'staff-discussion',
+			topic: 'A channel to hold discussions between organisers and volunteers',
+			type: ChannelType.TEXT,
+			parent_id: staff
+		});
+		await this.getOrCreateChannel('channel.staff.voice_discussion', {
+			name: 'Staff Voice Chat',
+			type: ChannelType.VOICE,
+			parent_id: staff
+		});
+	}
+
+	private async ensureHackathonChannels() {
+		const hackathon = await this.getOrCreateChannel('channel.hackathon', {
+			name: 'Hackathon',
+			type: ChannelType.CATEGORY
+		});
+
+		const onlyOrganisersSend = [
+			{
+				type: 'role',
+				id: this.api.options.discord.guildId,
+				deny: PermissionFlag.SEND_MESSAGES
+			},
+			{
+				type: 'role',
+				id: await this.getResourceOrFail('role.organiser'),
+				allow: PermissionFlag.SEND_MESSAGES
+			}
+		];
+
+		await this.getOrCreateChannel('channel.hackathon.announcements', {
+			name: 'announcements',
+			topic: 'Important announcements from the organisers!',
+			parent_id: hackathon,
+			permission_overwrites: onlyOrganisersSend
+		});
+
+		await this.getOrCreateChannel('channel.hackathon.events', {
+			name: 'events',
+			topic: 'Important events from the events team!',
+			parent_id: hackathon,
+			permission_overwrites: onlyOrganisersSend
+		});
+
+		await this.getOrCreateChannel('channel.hackathon.twitter', {
+			name: 'twitter',
+			topic: 'Updates from the twitter feed!',
+			parent_id: hackathon,
+			permission_overwrites: onlyOrganisersSend
+		});
+
+		await this.getOrCreateChannel('channel.hackathon.social', {
+			name: 'social',
+			topic: 'Chat to other participants!',
+			parent_id: hackathon,
+			rate_limit_per_user: 5
+		});
+
+		await this.getOrCreateChannel('channel.hackathon.find_team', {
+			name: 'find-a-team',
+			topic: 'Find other team mates here!',
+			parent_id: hackathon,
+			rate_limit_per_user: 5
+		});
 	}
 
 	private async fetchUserDetails(accessToken: string) {
