@@ -1,5 +1,3 @@
-export { UsersRoute } from './UsersRoute';
-export { UserRoute } from './UserRoute';
-export { TeamsRoute } from './TeamsRoute';
-export { TeamRoute } from './TeamRoute';
-export { DiscordRoute } from './DiscordRoute';
+export * from './users';
+export * from './teams';
+export * from './discord';

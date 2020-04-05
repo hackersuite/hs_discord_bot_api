@@ -1,5 +1,5 @@
-import RouteHandler from '../RouteHandler';
-import HackathonAPI from '../HackathonAPI';
+import RouteHandler from '../../RouteHandler';
+import HackathonAPI from '../../HackathonAPI';
 import { Request, Response } from 'express';
 
 interface QueryParams {
@@ -7,14 +7,14 @@ interface QueryParams {
 	state?: string;
 }
 
-export class DiscordRoute implements RouteHandler {
+export class DiscordOAuth2VerifyRoute implements RouteHandler {
 	private readonly api: HackathonAPI;
 	public constructor(api: HackathonAPI) {
 		this.api = api;
 	}
 
 	public getRoute() {
-		return '/discord';
+		return '/discord/verify';
 	}
 
 	public async get(req: Request, res: Response) {
