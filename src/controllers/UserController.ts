@@ -19,10 +19,8 @@ export class UserController {
 	}
 
 	public async getUsers() {
-		const db = this.getDB();
-
 		const [dbUsers, authUsers] = await Promise.all([
-			db.getRepository(User).find(),
+			this.api.db.getRepository(User).find(),
 			auth.getAllUsers(this.api.options.hsAuth.token)
 		]);
 
@@ -42,10 +40,8 @@ export class UserController {
 	}
 
 	public async getUser(discordId: string) {
-		const db = this.getDB();
-
 		const [dbUsers, authUsers] = await Promise.all([
-			db.getRepository(User).find(),
+			this.api.db.getRepository(User).find(),
 			auth.getAllUsers(this.api.options.hsAuth.token)
 		]);
 
@@ -70,7 +66,7 @@ export class UserController {
 	 * If a relationship exists already involving either the discordId or authId, it will be destroyed.
 	 */
 	public async saveUser(discordId: string, authId: string) {
-		return this.getDB().transaction(async manager => {
+		return this.api.db.transaction(async manager => {
 			const repo = manager.getRepository(User);
 			const existing = await repo.find({
 				where: [
@@ -94,7 +90,7 @@ export class UserController {
 	}
 
 	public async deleteUser(discordId: string) {
-		return this.getDB().getRepository(User).delete({ discordId });
+		return this.api.db.getRepository(User).delete({ discordId });
 	}
 
 	private transformAuthUser(user: auth.RequestUser, discordId: string): APIUser {
@@ -106,12 +102,5 @@ export class UserController {
 			name: user.name,
 			team: user.team
 		};
-	}
-
-	private getDB() {
-		if (!this.api.db) {
-			throw new Error('No database!');
-		}
-		return this.api.db;
 	}
 }

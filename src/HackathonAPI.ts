@@ -51,7 +51,7 @@ export default class HackathonAPI {
 	public readonly express: express.Application;
 	private readonly router: express.Router;
 	public readonly controllers: Controllers;
-	public db?: Connection;
+	public db!: Connection;
 	private readonly handlers: RouteHandler[];
 
 	public constructor(options: HackathonAPIOptions) {
