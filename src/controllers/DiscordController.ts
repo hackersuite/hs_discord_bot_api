@@ -6,6 +6,7 @@ import { Rest, TokenType } from '@spectacles/rest';
 import { Agent } from 'https';
 import { DiscordResource } from '../entities/DiscordResource';
 import { CreateGuildRoleData, CreateGuildChannelData, HasId, ChannelType, PermissionFlag, PermissionOverwrite, DiscordUser } from '../utils/DiscordConstants';
+import { AuthLevels } from '@unicsmcr/hs_auth_client';
 
 const API_BASE = 'https://discordapp.com/api/v6';
 
@@ -41,11 +42,36 @@ export class DiscordController {
 		const user = await this.fetchUserDetails(accessToken);
 		await this.api.controllers.user.saveUser(user.id, authId);
 		const authUser = await this.api.controllers.user.getUser(user.id);
-		const teamId = authUser?.team;
+		if (!authUser) throw new Error('No auth user!');
+		const teamId = authUser.team;
+		const roles = [await this.getAuthRole(authUser.authLevel)];
 		if (teamId && Number(teamId) !== 0) {
 			await this.api.controllers.team.putTeam(teamId);
+			const team = await this.api.controllers.team.getTeam(teamId);
+			if (team) {
+				await this.ensureTeamState(team);
+				roles.push(await this.getResourceOrFail(`role.teams.${team.teamNumber}`));
+			}
 		}
-		await this.addUserToGuild(accessToken, user.id);
+		const res = await this.addUserToGuild(accessToken, user.id, roles);
+		if (!res.user) {
+			await this.patchMember(user.id, { roles });
+		}
+	}
+
+	private async patchMember(userId: string, data: object) {
+		return this.rest.patch(`/guilds/${this.api.options.discord.guildId}/members/${userId}`, data);
+	}
+
+	private async getAuthRole(level: AuthLevels) {
+		if (level === AuthLevels.Organiser) {
+			return this.getResourceOrFail('role.organiser');
+		} else if (level === AuthLevels.Volunteer) {
+			return this.getResourceOrFail('role.volunteer');
+		} else if (level === AuthLevels.Attendee) {
+			return this.getResourceOrFail('role.attendee');
+		}
+		throw new Error(`No role for level ${level}`);
 	}
 
 	private saveResource(id: string, discordId: string) {
@@ -216,20 +242,29 @@ export class DiscordController {
 			}
 		];
 
-		const teams = await this.getOrCreateChannel('channel.teams', {
+		await this.getOrCreateChannel('channel.teams', {
 			name: 'Teams',
 			type: ChannelType.CATEGORY,
 			permission_overwrites: overwrites
 		});
 
 		for (const team of await this.api.controllers.team.getTeams()) {
-			await this.ensureTeamChannels(teams, overwrites, team);
+			await this.ensureTeamState(team);
 		}
 	}
 
-	private async ensureTeamChannels(parent: string, baseOverwrites: PermissionOverwrite[], team: AuthTeam) {
+	private async ensureTeamState(team: AuthTeam) {
 		const teamPermissions: PermissionOverwrite[] = [
-			...baseOverwrites,
+			{
+				type: 'role',
+				id: this.api.options.discord.guildId,
+				deny: PermissionFlag.VIEW_CHANNEL
+			},
+			{
+				type: 'role',
+				id: await this.getResourceOrFail('role.organiser'),
+				allow: PermissionFlag.VIEW_CHANNEL
+			},
 			{
 				type: 'role',
 				id: await this.getOrCreateRole(`role.teams.${team.teamNumber}`, {
@@ -241,6 +276,8 @@ export class DiscordController {
 								PermissionFlag.SPEAK)
 			}
 		];
+
+		const parent = await this.getResourceOrFail('channel.teams');
 
 		await this.getOrCreateChannel(`channel.teams.${team.teamNumber}.text`, {
 			name: `team-${team.teamNumber}`,
@@ -266,9 +303,10 @@ export class DiscordController {
 		return await client.get(`/users/@me`) as DiscordUser;
 	}
 
-	private addUserToGuild(accessToken: string, userId: string) {
+	private addUserToGuild(accessToken: string, userId: string, roles: string[]) {
 		return this.rest.put(`/guilds/${this.api.options.discord.guildId}/members/${userId}`, {
-			access_token: accessToken
+			access_token: accessToken,
+			roles
 		});
 	}
 
@@ -299,6 +337,6 @@ export class DiscordController {
 			.update(authId)
 			.digest('base64');
 		if (hash !== givenHash) throw new Error('State is not authentic');
-		return '5e5d7b9d22680803b4819963';
+		return authId;
 	}
 }
