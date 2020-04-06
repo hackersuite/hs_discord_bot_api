@@ -5,9 +5,11 @@ import { stringify } from 'querystring';
 import { Rest, TokenType } from '@spectacles/rest';
 import { Agent } from 'https';
 import { DiscordResource } from '../entities/DiscordResource';
-import { CreateGuildRoleData, CreateGuildChannelData, HasId, DiscordUser } from '../utils/DiscordConstants';
+import { DiscordUser } from '../utils/DiscordConstants';
 import { AuthLevels } from '@unicsmcr/hs_auth_client';
 import * as templates from '../templates';
+import { RolesController } from './discord/RolesController';
+import { ChannelsController } from './discord/ChannelsController';
 
 const API_BASE = 'https://discordapp.com/api/v6';
 
@@ -27,14 +29,19 @@ export interface AuthTeam {
 }
 
 export class DiscordController {
-	private readonly api: HackathonAPI;
-	private readonly rest: Rest;
+	public readonly api: HackathonAPI;
+	public readonly rest: Rest;
 	private readonly agent: Agent;
+
+	private readonly roles: RolesController;
+	private readonly channels: ChannelsController;
 
 	public constructor(api: HackathonAPI) {
 		this.api = api;
 		this.agent = new Agent({ keepAlive: true });
 		this.rest = new Rest(api.options.discord.botToken, { agent: this.agent });
+		this.roles = new RolesController(this);
+		this.channels = new ChannelsController(this);
 	}
 
 	public async processOAuth2(code: string, state: string) {
@@ -88,39 +95,19 @@ export class DiscordController {
 		throw new Error(`No role for level ${level}`);
 	}
 
-	private saveResource(id: string, discordId: string) {
+	public saveResource(id: string, discordId: string) {
 		const resource = new DiscordResource();
 		resource.id = id;
 		resource.discordId = discordId;
 		return this.api.db.getRepository(DiscordResource).save(resource);
 	}
 
-	private async getResource(id: string) {
+	public async getResource(id: string) {
 		return (await this.api.db.getRepository(DiscordResource).findOne({ where: { id } }))?.discordId;
 	}
 
-	private async getResourceOrFail(id: string) {
+	public async getResourceOrFail(id: string) {
 		return (await this.api.db.getRepository(DiscordResource).findOneOrFail({ where: { id } })).discordId;
-	}
-
-	private async createRole(resourceId: string, data: CreateGuildRoleData) {
-		const role: HasId = await this.rest.post(`/guilds/${this.api.options.discord.guildId}/roles`, data);
-		await this.saveResource(resourceId, role.id);
-		return { id: resourceId, discordId: role.id, role };
-	}
-
-	private async ensureRole(resourceId: string, data: CreateGuildRoleData) {
-		return await this.getResource(resourceId) || (await this.createRole(resourceId, data)).discordId;
-	}
-
-	private async createChannel(resourceId: string, data: CreateGuildChannelData) {
-		const channel: HasId = await this.rest.post(`/guilds/${this.api.options.discord.guildId}/channels`, data);
-		await this.saveResource(resourceId, channel.id);
-		return { id: resourceId, discordId: channel.id, channel };
-	}
-
-	private async ensureChannel(resourceId: string, data: CreateGuildChannelData) {
-		return await this.getResource(resourceId) || (await this.createChannel(resourceId, data)).discordId;
 	}
 
 	public async ensureBasicChannels() {
@@ -133,47 +120,47 @@ export class DiscordController {
 		Roles
 	*/
 	public async ensureBasicRoles() {
-		await this.ensureRole('role.organiser', templates.roles.organiser());
-		await this.ensureRole('role.volunteer', templates.roles.volunteer());
-		await this.ensureRole('role.attendee', templates.roles.attendee());
+		await this.roles.ensure('role.organiser', templates.roles.organiser());
+		await this.roles.ensure('role.volunteer', templates.roles.volunteer());
+		await this.roles.ensure('role.attendee', templates.roles.attendee());
 	}
 
 	/*
 		Staff Channels
 	*/
 	private async ensureStaffChannels() {
-		const staff = await this.ensureChannel('channel.staff', templates.channels.staffCategory(
+		const staff = await this.channels.ensure('channel.staff', templates.channels.staffCategory(
 			this.api.options.discord.guildId,
 			await this.getResourceOrFail('role.organiser'),
 			await this.getResourceOrFail('role.volunteer')
 		));
-		await this.ensureChannel('channel.staff.discussion', templates.channels.staffDiscussion(staff));
-		await this.ensureChannel('channel.staff.voice_discussion', templates.channels.staffVoice(staff));
+		await this.channels.ensure('channel.staff.discussion', templates.channels.staffDiscussion(staff));
+		await this.channels.ensure('channel.staff.voice_discussion', templates.channels.staffVoice(staff));
 	}
 
 	/*
 		Hackathon Channels
 	*/
 	private async ensureHackathonChannels() {
-		const hackathon = await this.ensureChannel('channel.hackathon', templates.channels.hackathonCategory());
+		const hackathon = await this.channels.ensure('channel.hackathon', templates.channels.hackathonCategory());
 		const organiserId = await this.getResourceOrFail('role.organiser');
 		const data = {
 			guildId: this.api.options.discord.guildId,
 			organiserId,
 			parentId: hackathon
 		};
-		await this.ensureChannel('channel.hackathon.announcements', templates.channels.hackathonAnnouncements(data));
-		await this.ensureChannel('channel.hackathon.events', templates.channels.hackathonEvents(data));
-		await this.ensureChannel('channel.hackathon.twitter', templates.channels.hackathonTwitter(data));
-		await this.ensureChannel('channel.hackathon.social', templates.channels.hackathonSocial(hackathon));
-		await this.ensureChannel('channel.hackathon.find_team', templates.channels.hackathonFindTeam(hackathon));
+		await this.channels.ensure('channel.hackathon.announcements', templates.channels.hackathonAnnouncements(data));
+		await this.channels.ensure('channel.hackathon.events', templates.channels.hackathonEvents(data));
+		await this.channels.ensure('channel.hackathon.twitter', templates.channels.hackathonTwitter(data));
+		await this.channels.ensure('channel.hackathon.social', templates.channels.hackathonSocial(hackathon));
+		await this.channels.ensure('channel.hackathon.find_team', templates.channels.hackathonFindTeam(hackathon));
 	}
 
 	/*
 		Team Channels
 	*/
 	private async ensureTeamsChannels() {
-		await this.ensureChannel('channel.teams', templates.channels.teamsCategory(
+		await this.channels.ensure('channel.teams', templates.channels.teamsCategory(
 			this.api.options.discord.guildId,
 			await this.getResourceOrFail('role.organiser')
 		));
@@ -188,12 +175,12 @@ export class DiscordController {
 			guildId: this.api.options.discord.guildId,
 			parentId: await this.getResourceOrFail('channel.teams'),
 			organiserId: await this.getResourceOrFail('role.organiser'),
-			teamRoleId: await this.ensureRole(`role.teams.${team.teamNumber}`, templates.roles.team(team.teamNumber)),
+			teamRoleId: await this.roles.ensure(`role.teams.${team.teamNumber}`, templates.roles.team(team.teamNumber)),
 			team
 		};
 
-		await this.ensureChannel(`channel.teams.${team.teamNumber}.text`, templates.channels.teamTextChannel(options));
-		await this.ensureChannel(`channel.teams.${team.teamNumber}.voice`, templates.channels.teamVoiceChannel(options));
+		await this.channels.ensure(`channel.teams.${team.teamNumber}.text`, templates.channels.teamTextChannel(options));
+		await this.channels.ensure(`channel.teams.${team.teamNumber}.voice`, templates.channels.teamVoiceChannel(options));
 	}
 
 	private async fetchUserDetails(accessToken: string) {
