@@ -1,5 +1,6 @@
 import { DiscordController } from '../DiscordController';
 import { CreateGuildRoleData, HasId } from '../../utils/DiscordConstants';
+import * as templates from '../../templates';
 
 export class RolesController {
 	private readonly parent: DiscordController;
@@ -21,5 +22,11 @@ export class RolesController {
 	public async ensure(resourceId: string, data: CreateGuildRoleData) {
 		return await this.parent.getResource(resourceId) ||
 			(await this.create(resourceId, data)).discordId;
+	}
+
+	public async ensureBasicRoles() {
+		await this.ensure('role.organiser', templates.roles.organiser());
+		await this.ensure('role.volunteer', templates.roles.volunteer());
+		await this.ensure('role.attendee', templates.roles.attendee());
 	}
 }

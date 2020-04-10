@@ -25,8 +25,8 @@ export class DiscordSetupRoute implements RouteHandler {
 		}
 		this.busy = true;
 		try {
-			await this.api.controllers.discord.ensureBasicRoles();
-			await this.api.controllers.discord.ensureBasicChannels();
+			await this.api.controllers.discord.roles.ensureBasicRoles();
+			await this.api.controllers.discord.channels.ensureChannels();
 		} catch (err) {
 			this.busy = false;
 			throw err;
