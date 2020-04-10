@@ -6,6 +6,7 @@ import * as templates from '../templates';
 import { RolesController } from './discord/RolesController';
 import { ChannelsController } from './discord/ChannelsController';
 import { OAuth2Controller } from './discord/OAuth2Controller';
+import { MessagesController } from './discord/MessagesController';
 
 export interface AuthTeam {
 	authId: string;
@@ -22,6 +23,7 @@ export class DiscordController {
 	public readonly roles: RolesController;
 	public readonly channels: ChannelsController;
 	public readonly oauth2: OAuth2Controller;
+	public readonly messages: MessagesController;
 
 	public constructor(api: HackathonAPI) {
 		this.api = api;
@@ -30,6 +32,7 @@ export class DiscordController {
 		this.roles = new RolesController(this);
 		this.channels = new ChannelsController(this);
 		this.oauth2 = new OAuth2Controller(this);
+		this.messages = new MessagesController(this);
 	}
 
 	public saveResource(id: string, discordId: string) {

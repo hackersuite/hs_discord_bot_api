@@ -81,3 +81,76 @@ export interface CreateGuildChannelData {
 	parent_id?: string;
 	nsfw?: boolean;
 }
+
+export interface CreateGuildChannelData {
+	name: string;
+	type: ChannelType;
+	topic?: string;
+	bitrate?: number;
+	user_limit?: number;
+	rate_limit_per_user?: number;
+	position?: number;
+	permission_overwrites?: PermissionOverwrite[];
+	parent_id?: string;
+	nsfw?: boolean;
+}
+
+export interface EmbedFooter {
+	text: string;
+	icon_url?: string;
+	proxy_icon_url?: string;
+}
+
+export interface EmbedImage {
+	url?: string;
+	proxy_url?: string;
+	height?: number;
+	width?: number;
+}
+
+export interface EmbedVideo {
+	url?: string;
+	height?: number;
+	width?: number;
+}
+
+export interface EmbedProvider {
+	name?: string;
+	url?: string;
+}
+
+export interface EmbedAuthor {
+	name?: string;
+	url?: string;
+	icon_url?: string;
+	proxy_icon_url?: string;
+}
+
+export interface EmbedField {
+	name: string;
+	value: string;
+	inline?: boolean;
+}
+
+export interface Embed {
+	title?: string;
+	type?: string; // rich, image, video, gifv, article, link
+	description?: string;
+	url?: string;
+	timestamp?: string;
+	color?: number;
+	footer?: EmbedFooter;
+	image?: EmbedImage;
+	thumbnail?: EmbedImage;
+	video?: EmbedVideo;
+	provider?: EmbedProvider;
+	author?: EmbedAuthor;
+	fields?: EmbedField[];
+}
+
+export interface CreateMessageData {
+	content: string;
+	nonce?: number | string;
+	tts?: boolean;
+	embed?: Embed;
+}
