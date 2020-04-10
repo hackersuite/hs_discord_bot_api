@@ -149,7 +149,7 @@ export interface Embed {
 }
 
 export interface CreateMessageData {
-	content: string;
+	content?: string;
 	nonce?: number | string;
 	tts?: boolean;
 	embed?: Embed;

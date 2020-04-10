@@ -1,5 +1,5 @@
 import { CreateGuildChannelData, ChannelType, PermissionFlag, PermissionOverwrite } from '../utils/DiscordConstants';
-import { AuthTeam } from '../controllers/DiscordController';
+import { APITeam } from '../controllers/TeamController';
 
 export function staffCategory(guildId: string, organiserId: string, volunteerId: string): CreateGuildChannelData {
 	return {
@@ -162,7 +162,7 @@ interface TeamChannelOptions {
 	parentId: string;
 	organiserId: string;
 	teamRoleId: string;
-	team: AuthTeam;
+	team: APITeam;
 }
 
 export function teamTextChannel(options: TeamChannelOptions): CreateGuildChannelData {

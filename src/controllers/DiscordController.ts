@@ -7,13 +7,7 @@ import { RolesController } from './discord/RolesController';
 import { ChannelsController } from './discord/ChannelsController';
 import { OAuth2Controller } from './discord/OAuth2Controller';
 import { MessagesController } from './discord/MessagesController';
-
-export interface AuthTeam {
-	authId: string;
-	name: string;
-	creator: string;
-	teamNumber: number;
-}
+import { APITeam } from './TeamController';
 
 export class DiscordController {
 	public readonly api: HackathonAPI;
@@ -50,7 +44,7 @@ export class DiscordController {
 		return (await this.api.db.getRepository(DiscordResource).findOneOrFail({ where: { id } })).discordId;
 	}
 
-	public async ensureTeamState(team: AuthTeam) {
+	public async ensureTeamState(team: APITeam) {
 		const options = {
 			guildId: this.api.options.discord.guildId,
 			parentId: await this.getResourceOrFail('channel.teams'),
@@ -59,7 +53,16 @@ export class DiscordController {
 			team
 		};
 
-		await this.channels.ensure(`channel.teams.${team.teamNumber}.text`, templates.channels.teamTextChannel(options));
+		const prefix = `channel.teams.${team.teamNumber}`;
+
+		const textChannel = await this.channels.ensure(`${prefix}.text`, templates.channels.teamTextChannel(options));
+
+		await this.messages.ensure(
+			`messages.teams.${team.teamNumber}.welcome`,
+			textChannel,
+			templates.messages.teamWelcome(team)
+		);
+
 		await this.channels.ensure(`channel.teams.${team.teamNumber}.voice`, templates.channels.teamVoiceChannel(options));
 	}
 }
