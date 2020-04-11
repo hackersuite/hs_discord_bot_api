@@ -36,6 +36,7 @@ export class ChannelsController {
 			await this.parent.getResourceOrFail('role.volunteer')
 		));
 		await this.ensure('channel.staff.discussion', templates.channels.staffDiscussion(staff));
+		await this.ensure('channel.staff.twitter_staging', templates.channels.staffTwitterStaging(staff));
 		await this.ensure('channel.staff.voice_discussion', templates.channels.staffVoice(staff));
 	}
 

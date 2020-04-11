@@ -34,6 +34,15 @@ export function staffDiscussion(parentId: string): CreateGuildChannelData {
 	};
 }
 
+export function staffTwitterStaging(parentId: string): CreateGuildChannelData {
+	return {
+		name: 'twitter-staging',
+		topic: 'React with 👍 to approve a tweet, and 👎 to reject it',
+		type: ChannelType.TEXT,
+		parent_id: parentId
+	};
+}
+
 export function staffVoice(parentId: string): CreateGuildChannelData {
 	return {
 		name: 'Staff Voice Chat',
