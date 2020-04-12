@@ -30,3 +30,11 @@ export function team(teamNumber: number): CreateGuildRoleData {
 		name: `Team ${teamNumber}`
 	};
 }
+
+export function language(name: string): CreateGuildRoleData {
+	return {
+		name,
+		mentionable: true,
+		color: 0x1ABC9C
+	};
+}

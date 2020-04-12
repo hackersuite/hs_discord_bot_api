@@ -31,6 +31,12 @@ export class DiscordController {
 		this.resources = new DiscordResourceController(this.api);
 	}
 
+	public async setup() {
+		await this.api.controllers.team.putAllTeams();
+		await this.roles.ensureBasicRoles();
+		await this.channels.ensureChannels();
+	}
+
 	public async ensureTeamState(team: APITeam) {
 		const categoryNumber = Math.floor((team.teamNumber - 1) / 25);
 		const categoryName = `channel.teams.groups.${categoryNumber}`;

@@ -1,5 +1,6 @@
 import { DiscordController } from '../DiscordController';
 import { CreateGuildRoleData, HasId } from '../../utils/DiscordConstants';
+import languages from '../../utils/ProgrammingLanguages';
 import * as templates from '../../templates';
 
 export class RolesController {
@@ -28,5 +29,9 @@ export class RolesController {
 		await this.ensure('role.volunteer', templates.roles.volunteer());
 		await this.ensure('role.attendee', templates.roles.attendee());
 		await this.ensure('role.muted', templates.roles.muted());
+
+		for (const language of languages) {
+			await this.ensure(language.id, templates.roles.language(language.name));
+		}
 	}
 }
