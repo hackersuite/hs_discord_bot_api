@@ -1,6 +1,7 @@
 import * as auth from '@unicsmcr/hs_auth_client';
 import HackathonAPI from '../HackathonAPI';
 import { User } from '../entities/User';
+import { DiscordResource } from '../entities/DiscordResource';
 
 export interface APIUser {
 	authId: string;
@@ -9,6 +10,7 @@ export interface APIUser {
 	email: string;
 	name: string;
 	team?: string;
+	roles: DiscordResource[];
 }
 
 export class UserController {
@@ -24,48 +26,50 @@ export class UserController {
 			auth.getAllUsers(this.api.options.hsAuth.token)
 		]);
 
-		const discordIds: Map<string, string> = new Map();
+		const authMap: Map<string, User> = new Map();
 		for (const user of dbUsers) {
-			discordIds.set(user.authId, user.discordId);
+			authMap.set(user.authId, user);
 		}
 
 		const users = [];
 		for (const user of authUsers) {
-			const discordId = discordIds.get(user.authId);
-			if (discordId) {
-				users.push(this.transformAuthUser(user, discordId));
+			const dbUser = authMap.get(user.authId);
+			if (dbUser) {
+				users.push(this.transformAuthUser(user, dbUser));
 			}
 		}
 		return users;
 	}
 
 	public async getUser(discordId: string) {
-		const [dbUsers, authUsers] = await Promise.all([
-			this.api.db.getRepository(User).find(),
+		const [dbUser, authUsers] = await Promise.all([
+			this.api.db.getRepository(User).findOne({
+				where: { discordId },
+				relations: ['roles']
+			}),
 			auth.getAllUsers(this.api.options.hsAuth.token)
 		]);
 
-		let targetId = null;
-		for (const user of dbUsers) {
-			if (user.discordId === discordId) {
-				targetId = user.authId;
-				break;
-			}
-		}
-		if (!targetId) return null;
+		if (!dbUser || !authUsers) return;
+		const targetId = dbUser.authId;
 
 		for (const user of authUsers) {
 			if (user.authId === targetId) {
-				return this.transformAuthUser(user, discordId);
+				return this.transformAuthUser(user, dbUser);
 			}
 		}
+	}
+
+	public async getAuthUser(authId: string) {
+		return (await auth.getAllUsers(this.api.options.hsAuth.token))
+			.find(user => user.authId === authId);
 	}
 
 	/**
 	 * Will save a discord <-> hs_auth relationship in users table
 	 * If a relationship exists already involving either the discordId or authId, it will be destroyed.
 	 */
-	public async saveUser(discordId: string, authId: string) {
+	public async saveUser(discordId: string, authId: string, roles: DiscordResource[]) {
 		return this.api.db.transaction(async manager => {
 			const repo = manager.getRepository(User);
 			const existing = await repo.find({
@@ -84,6 +88,7 @@ export class UserController {
 			const user = new User();
 			user.discordId = discordId;
 			user.authId = authId;
+			user.roles = roles;
 
 			return repo.save(user);
 		});
@@ -93,14 +98,15 @@ export class UserController {
 		return this.api.db.getRepository(User).delete({ discordId });
 	}
 
-	private transformAuthUser(user: auth.RequestUser, discordId: string): APIUser {
+	private transformAuthUser(authUser: auth.RequestUser, dbUser: User): APIUser {
 		return {
-			authId: user.authId,
-			discordId,
-			authLevel: user.authLevel,
-			email: user.email,
-			name: user.name,
-			team: user.team
+			authId: authUser.authId,
+			discordId: dbUser.discordId,
+			authLevel: authUser.authLevel,
+			email: authUser.email,
+			name: authUser.name,
+			team: authUser.team,
+			roles: dbUser.roles
 		};
 	}
 }
