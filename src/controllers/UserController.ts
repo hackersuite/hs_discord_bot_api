@@ -128,6 +128,19 @@ export class UserController {
 		return userRepo.save(user);
 	}
 
+	public async removeRoles(discordId: string, roles: string[]) {
+		const userRepo = this.api.db.getRepository(User);
+		const user = await userRepo.findOneOrFail({
+			where: {
+				discordId
+			},
+			relations: ['roles']
+		});
+		user.roles = user.roles.filter(role => !roles.includes(role.name));
+		await this.setUserRoles(discordId, user.roles.map(role => role.discordId));
+		return userRepo.save(user);
+	}
+
 	private async setUserRoles(discordId: string, roles: string[]) {
 		const rest = this.api.controllers.discord.rest;
 		return rest.patch(`/guilds/${this.api.options.discord.guildId}/members/${discordId}`, {

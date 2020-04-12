@@ -3,7 +3,7 @@ import HackathonAPI from '../../HackathonAPI';
 import { Request, Response } from 'express';
 
 interface EditPayload {
-	method: 'add' | 'set';
+	method: 'add' | 'set' | 'remove';
 	roles: string[];
 }
 
@@ -26,6 +26,10 @@ export class UserRolesRoute implements RouteHandler {
 		} else if (body.method === 'set') {
 			res.json({
 				user: await this.api.controllers.user.setRoles(req.params.id, body.roles)
+			});
+		} else if (body.method === 'remove') {
+			res.json({
+				user: await this.api.controllers.user.removeRoles(req.params.id, body.roles)
 			});
 		}
 	}
