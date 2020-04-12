@@ -22,7 +22,7 @@ export class UserController {
 
 	public async getUsers() {
 		const [dbUsers, authUsers] = await Promise.all([
-			this.api.db.getRepository(User).find(),
+			this.api.db.getRepository(User).find({ relations: ['roles'] }),
 			auth.getAllUsers(this.api.options.hsAuth.token)
 		]);
 
