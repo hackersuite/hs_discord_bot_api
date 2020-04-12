@@ -98,6 +98,43 @@ export class UserController {
 		return this.api.db.getRepository(User).delete({ discordId });
 	}
 
+	public async addRoles(discordId: string, roles: string[]) {
+		const userRepo = this.api.db.getRepository(User);
+		const user = await userRepo.findOneOrFail({
+			where: {
+				discordId
+			},
+			relations: ['roles']
+		});
+		const nextRoles = user.roles.map(role => role.name).concat(roles);
+		const mappedRoles = (await this.api.db.getRepository(DiscordResource).find())
+			.filter(res => nextRoles.includes(res.name));
+		user.roles = mappedRoles;
+		await this.setUserRoles(discordId, user.roles.map(role => role.discordId));
+		return userRepo.save(user);
+	}
+
+	public async setRoles(discordId: string, roles: string[]) {
+		const userRepo = this.api.db.getRepository(User);
+		const user = await userRepo.findOneOrFail({
+			where: {
+				discordId
+			}
+		});
+		const mappedRoles = (await this.api.db.getRepository(DiscordResource).find())
+			.filter(res => roles.includes(res.name));
+		user.roles = mappedRoles;
+		await this.setUserRoles(discordId, user.roles.map(role => role.discordId));
+		return userRepo.save(user);
+	}
+
+	private async setUserRoles(discordId: string, roles: string[]) {
+		const rest = this.api.controllers.discord.rest;
+		return rest.patch(`/guilds/${this.api.options.discord.guildId}/members/${discordId}`, {
+			roles
+		});
+	}
+
 	private transformAuthUser(authUser: auth.RequestUser, dbUser: User): APIUser {
 		return {
 			authId: authUser.authId,
