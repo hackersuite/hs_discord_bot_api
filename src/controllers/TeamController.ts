@@ -58,8 +58,14 @@ export class TeamController {
 		if (team) return { authId };
 		team = new Team();
 		team.authId = authId;
-		await repo.save(team);
-		return { authId };
+		return repo.save(team);
+	}
+
+	public async putAllTeams() {
+		const teams = await auth.getTeams(this.api.options.hsAuth.token);
+		for (const team of teams) {
+			await this.putTeam(team._id);
+		}
 	}
 
 	private transformAuthTeam(team: auth.Team, teamNumber: number): APITeam {

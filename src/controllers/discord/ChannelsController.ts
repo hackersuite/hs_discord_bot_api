@@ -56,11 +56,6 @@ export class ChannelsController {
 	}
 
 	private async ensureTeamsChannels() {
-		await this.ensure('channel.teams', templates.channels.teamsCategory(
-			this.parent.api.options.discord.guildId,
-			await this.parent.getResourceOrFail('role.organiser')
-		));
-
 		for (const team of await this.parent.api.controllers.team.getTeams()) {
 			await this.parent.ensureTeamState(team);
 		}

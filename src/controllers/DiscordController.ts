@@ -45,9 +45,16 @@ export class DiscordController {
 	}
 
 	public async ensureTeamState(team: APITeam) {
+		const categoryNumber = Math.floor((team.teamNumber - 1) / 25);
+		const categoryName = `channel.teams.groups.${categoryNumber}`;
+
 		const options = {
 			guildId: this.api.options.discord.guildId,
-			parentId: await this.getResourceOrFail('channel.teams'),
+			parentId: await this.channels.ensure(categoryName, templates.channels.teamsCategory(
+				this.api.options.discord.guildId,
+				await this.getResourceOrFail('role.organiser'),
+				categoryNumber
+			)),
 			organiserId: await this.getResourceOrFail('role.organiser'),
 			teamRoleId: await this.roles.ensure(`role.teams.${team.teamNumber}`, templates.roles.team(team.teamNumber)),
 			team

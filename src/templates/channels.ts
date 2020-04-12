@@ -158,9 +158,9 @@ function teamChannelsPermissions(options: TeamChannelOptions): PermissionOverwri
 	];
 }
 
-export function teamsCategory(guildId: string, organiserId: string): CreateGuildChannelData {
+export function teamsCategory(guildId: string, organiserId: string, group: number): CreateGuildChannelData {
 	return {
-		name: 'Teams',
+		name: `Teams ${(group * 25) + 1} - ${(group + 1) * 25}`,
 		type: ChannelType.CATEGORY,
 		permission_overwrites: teamsChannelsBasePermissions(guildId, organiserId)
 	};

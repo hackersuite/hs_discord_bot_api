@@ -31,9 +31,7 @@ export class TeamsRoute implements RouteHandler {
 			});
 		}
 		res.json({
-			team: {
-				authId: team.authId
-			}
+			team
 		});
 	}
 }
