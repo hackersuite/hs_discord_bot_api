@@ -2,10 +2,11 @@ import 'reflect-metadata';
 import express from 'express';
 import { UserController, TeamController, DiscordController } from './controllers';
 import RouteHandler, { ExpressHandler } from './RouteHandler';
-import { UsersRoute, UserRoute, TeamsRoute, TeamRoute, DiscordRoute } from './routes';
+import * as routes from './routes';
 import { createConnection, ConnectionOptions, Connection } from 'typeorm';
 import { User } from './entities/User';
 import { Team } from './entities/Team';
+import { DiscordResource } from './entities/DiscordResource';
 import pino from 'pino';
 
 export interface HackathonAPIOptions {
@@ -50,7 +51,7 @@ export default class HackathonAPI {
 	public readonly express: express.Application;
 	private readonly router: express.Router;
 	public readonly controllers: Controllers;
-	public db?: Connection;
+	public db!: Connection;
 	private readonly handlers: RouteHandler[];
 
 	public constructor(options: HackathonAPIOptions) {
@@ -73,7 +74,7 @@ export default class HackathonAPI {
 		this.options.loggers.base.info('Starting Hackathon API server...');
 		this.db = await createConnection({
 			...this.options.db,
-			entities: [User, Team],
+			entities: [User, Team, DiscordResource],
 			logging: false,
 			synchronize: true
 		});
@@ -85,11 +86,9 @@ export default class HackathonAPI {
 	private configureExpress() {
 		return new Promise((resolve, reject) => {
 			this.router.use(express.json());
-			this.addRoute(new UsersRoute(this));
-			this.addRoute(new UserRoute(this));
-			this.addRoute(new TeamsRoute(this));
-			this.addRoute(new TeamRoute(this));
-			this.addRoute(new DiscordRoute(this));
+			for (const Route of Object.values(routes)) {
+				this.addRoute(new Route(this));
+			}
 			this.express.listen(this.options.api.port, resolve);
 			this.express.on('error', err => {
 				reject(err);
@@ -103,6 +102,7 @@ export default class HackathonAPI {
 		const path = handler.getRoute();
 		for (const verb of VERBS) {
 			const fn = handler[verb];
+			this.options.loggers.api.info(`Registered ${verb.toUpperCase()} ${handler.getRoute()}`);
 			if (fn) this.router[verb](path, this.wrapHandler(fn.bind(handler)));
 		}
 	}

@@ -1,94 +1,68 @@
 import HackathonAPI from '../HackathonAPI';
-import { createHmac } from 'crypto';
-import axios from 'axios';
-import { stringify } from 'querystring';
-import { Rest, TokenType } from '@spectacles/rest';
+import { Rest } from '@spectacles/rest';
 import { Agent } from 'https';
-
-const API_BASE = 'https://discordapp.com/api/v6';
-
-interface TokenResponse {
-	access_token: string;
-	token_type: string;
-	expires_in: number;
-	refresh_token: string;
-	scope: string;
-}
-
-// not a full user, only properties we're interested in
-// see https://discordapp.com/developers/docs/resources/user#user-object
-interface DiscordUser {
-	id: string;
-	locale: string;
-}
-
-export interface APITeam {
-	authId: string;
-	name: string;
-	creator: string;
-	teamNumber: number;
-}
+import { DiscordResource } from '../entities/DiscordResource';
+import * as templates from '../templates';
+import { RolesController } from './discord/RolesController';
+import { ChannelsController } from './discord/ChannelsController';
+import { OAuth2Controller } from './discord/OAuth2Controller';
+import { MessagesController } from './discord/MessagesController';
+import { APITeam } from './TeamController';
 
 export class DiscordController {
-	private readonly api: HackathonAPI;
-	private readonly rest: Rest;
+	public readonly api: HackathonAPI;
+	public readonly rest: Rest;
 	private readonly agent: Agent;
+
+	public readonly roles: RolesController;
+	public readonly channels: ChannelsController;
+	public readonly oauth2: OAuth2Controller;
+	public readonly messages: MessagesController;
 
 	public constructor(api: HackathonAPI) {
 		this.api = api;
 		this.agent = new Agent({ keepAlive: true });
 		this.rest = new Rest(api.options.discord.botToken, { agent: this.agent });
+		this.roles = new RolesController(this);
+		this.channels = new ChannelsController(this);
+		this.oauth2 = new OAuth2Controller(this);
+		this.messages = new MessagesController(this);
 	}
 
-	public async processOAuth2(code: string, state: string) {
-		const authId = this.validateState(state);
-		const accessToken = await this.getAccessToken(code);
-		const user = await this.fetchUserDetails(accessToken);
-		await this.api.controllers.user.saveUser(user.id, authId);
-		await this.addUserToGuild(accessToken, user.id);
+	public saveResource(id: string, discordId: string) {
+		const resource = new DiscordResource();
+		resource.id = id;
+		resource.discordId = discordId;
+		return this.api.db.getRepository(DiscordResource).save(resource);
 	}
 
-	private async fetchUserDetails(accessToken: string) {
-		const client = new Rest(accessToken, {
-			tokenType: TokenType.BEARER,
-			agent: this.agent
-		});
-		return await client.get(`/users/@me`) as DiscordUser;
+	public async getResource(id: string) {
+		return (await this.api.db.getRepository(DiscordResource).findOne({ where: { id } }))?.discordId;
 	}
 
-	private addUserToGuild(accessToken: string, userId: string) {
-		return this.rest.put(`/guilds/${this.api.options.discord.guildId}/members/${userId}`, {
-			access_token: accessToken
-		});
+	public async getResourceOrFail(id: string) {
+		return (await this.api.db.getRepository(DiscordResource).findOneOrFail({ where: { id } })).discordId;
 	}
 
-	private async getAccessToken(code: string) {
-		const res = await axios.post(`${API_BASE}/oauth2/token`, stringify({
-			client_id: this.api.options.discord.clientId,
-			client_secret: this.api.options.discord.clientSecret,
-			grant_type: 'authorization_code',
-			code,
-			redirect_uri: this.api.options.discord.redirectUri,
-			scope: 'identify guilds.join'
-		}), { httpsAgent: this.agent });
-		const data = res.data as TokenResponse;
-		return data.access_token;
-	}
+	public async ensureTeamState(team: APITeam) {
+		const options = {
+			guildId: this.api.options.discord.guildId,
+			parentId: await this.getResourceOrFail('channel.teams'),
+			organiserId: await this.getResourceOrFail('role.organiser'),
+			teamRoleId: await this.roles.ensure(`role.teams.${team.teamNumber}`, templates.roles.team(team.teamNumber)),
+			team
+		};
 
-	/**
-	 * Validates the state given back to us by Discord. This is done to check that it actually
-	 * comes from the hs system, and not some 3rd party. The state given is base64-encoded.
-	 * When decoded, it contains the authId and an hmac of the authId joined by a colon.
-	 * If the hmac is deemed to be valid, then this will return the authId, otherwise an
-	 * error will be thrown.
-	 */
-	private validateState(state: string) {
-		const [authId, givenHash] = Buffer.from(state, 'base64').toString('utf8').split(':');
-		if (!authId || !givenHash) throw new Error('Invalid state');
-		const hash = createHmac('sha256', this.api.options.discord.hmacKey)
-			.update(authId)
-			.digest('base64');
-		if (hash !== givenHash) throw new Error('State is not authentic');
-		return authId;
+		const prefix = `channel.teams.${team.teamNumber}`;
+
+		const textChannel = await this.channels.ensure(`${prefix}.text`, templates.channels.teamTextChannel(options));
+
+		await this.messages.ensure(
+			`messages.teams.${team.teamNumber}.welcome`,
+			textChannel,
+			templates.messages.teamWelcome(team)
+		);
+
+		await this.channels.ensure(`channel.teams.${team.teamNumber}.voice`, templates.channels.teamVoiceChannel(options));
 	}
 }

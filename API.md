@@ -179,7 +179,7 @@ with a null team property.
 ```
 
 
-### `GET /api/v1/discord?code=[...]&state=[...]`
+### `GET /api/v1/discord/verify?code=[...]&state=[...]`
 
 Used to identify users. Once users have authenticated with Discord, they are redirected here.
 

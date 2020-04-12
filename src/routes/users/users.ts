@@ -1,5 +1,5 @@
-import RouteHandler from '../RouteHandler';
-import HackathonAPI from '../HackathonAPI';
+import RouteHandler from '../../RouteHandler';
+import HackathonAPI from '../../HackathonAPI';
 import { Request, Response } from 'express';
 
 interface PutBody {

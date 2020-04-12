@@ -17,10 +17,8 @@ export class TeamController {
 	}
 
 	public async getTeams() {
-		const db = this.getDB();
-
 		const [dbTeams, authTeams] = await Promise.all([
-			db.getRepository(Team).find(),
+			this.api.db.getRepository(Team).find(),
 			auth.getTeams(this.api.options.hsAuth.token)
 		]);
 
@@ -40,11 +38,9 @@ export class TeamController {
 	}
 
 	public async getTeam(authId: string) {
-		const db = this.getDB();
-
 		try {
 			const [dbTeam, authTeam] = await Promise.all([
-				db.getRepository(Team).findOne({ authId }),
+				this.api.db.getRepository(Team).findOne({ authId }),
 				auth.getTeam(this.api.options.hsAuth.token, authId)
 			]);
 			if (!dbTeam || !authTeam) throw new Error('Team not found');
@@ -57,7 +53,7 @@ export class TeamController {
 	}
 
 	public async putTeam(authId: string) {
-		const repo = this.getDB().getRepository(Team);
+		const repo = this.api.db.getRepository(Team);
 		let team = await repo.findOne({ authId });
 		if (team) return { authId };
 		team = new Team();
@@ -73,12 +69,5 @@ export class TeamController {
 			name: team.name,
 			teamNumber
 		};
-	}
-
-	private getDB() {
-		if (!this.api.db) {
-			throw new Error('No database!');
-		}
-		return this.api.db;
 	}
 }
