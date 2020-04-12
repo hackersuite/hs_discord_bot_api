@@ -15,12 +15,12 @@ export class ChannelsController {
 
 	public async create(resourceId: string, data: CreateGuildChannelData) {
 		const channel: HasId = await this.parent.rest.post(`/guilds/${this.guildId}/channels`, data);
-		await this.parent.saveResource(resourceId, channel.id);
-		return { id: resourceId, discordId: channel.id, channel };
+		const resource = await this.parent.resources.set(resourceId, channel.id);
+		return resource.discordId;
 	}
 
 	public async ensure(resourceId: string, data: CreateGuildChannelData) {
-		return await this.parent.getResource(resourceId) || (await this.create(resourceId, data)).discordId;
+		return await this.parent.resources.getId(resourceId) || this.create(resourceId, data);
 	}
 
 	public async ensureChannels() {
@@ -32,8 +32,8 @@ export class ChannelsController {
 	private async ensureStaffChannels() {
 		const staff = await this.ensure('channel.staff', templates.channels.staffCategory(
 			this.guildId,
-			await this.parent.getResourceOrFail('role.organiser'),
-			await this.parent.getResourceOrFail('role.volunteer')
+			await this.parent.resources.getIdOrFail('role.organiser'),
+			await this.parent.resources.getIdOrFail('role.volunteer')
 		));
 		await this.ensure('channel.staff.discussion', templates.channels.staffDiscussion(staff));
 		await this.ensure('channel.staff.twitter_staging', templates.channels.staffTwitterStaging(staff));
@@ -42,7 +42,7 @@ export class ChannelsController {
 
 	private async ensureHackathonChannels() {
 		const hackathon = await this.ensure('channel.hackathon', templates.channels.hackathonCategory());
-		const organiserId = await this.parent.getResourceOrFail('role.organiser');
+		const organiserId = await this.parent.resources.getIdOrFail('role.organiser');
 		const data = {
 			guildId: this.guildId,
 			organiserId,

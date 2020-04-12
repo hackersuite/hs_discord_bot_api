@@ -18,7 +18,7 @@ export class DiscordResourcesRoute implements RouteHandler {
 	}
 
 	public async get(req: Request, res: Response) {
-		const discordId = await this.api.controllers.discord.getResource(req.params.name);
+		const discordId = await this.api.controllers.discord.resources.getId(req.params.name);
 		if (!discordId) res.status(404);
 		res.json({ discordId, name: req.params.name });
 	}

@@ -1,19 +1,20 @@
 import HackathonAPI from '../HackathonAPI';
 import { Rest } from '@spectacles/rest';
 import { Agent } from 'https';
-import { DiscordResource } from '../entities/DiscordResource';
 import * as templates from '../templates';
 import { RolesController } from './discord/RolesController';
 import { ChannelsController } from './discord/ChannelsController';
 import { OAuth2Controller } from './discord/OAuth2Controller';
 import { MessagesController } from './discord/MessagesController';
 import { APITeam } from './TeamController';
+import { DiscordResourceController } from './DiscordResourceController';
 
 export class DiscordController {
 	public readonly api: HackathonAPI;
 	public readonly rest: Rest;
 	private readonly agent: Agent;
 
+	public readonly resources: DiscordResourceController;
 	public readonly roles: RolesController;
 	public readonly channels: ChannelsController;
 	public readonly oauth2: OAuth2Controller;
@@ -27,21 +28,7 @@ export class DiscordController {
 		this.channels = new ChannelsController(this);
 		this.oauth2 = new OAuth2Controller(this);
 		this.messages = new MessagesController(this);
-	}
-
-	public saveResource(id: string, discordId: string) {
-		const resource = new DiscordResource();
-		resource.id = id;
-		resource.discordId = discordId;
-		return this.api.db.getRepository(DiscordResource).save(resource);
-	}
-
-	public async getResource(id: string) {
-		return (await this.api.db.getRepository(DiscordResource).findOne({ where: { id } }))?.discordId;
-	}
-
-	public async getResourceOrFail(id: string) {
-		return (await this.api.db.getRepository(DiscordResource).findOneOrFail({ where: { id } })).discordId;
+		this.resources = new DiscordResourceController(this.api);
 	}
 
 	public async ensureTeamState(team: APITeam) {
@@ -52,10 +39,10 @@ export class DiscordController {
 			guildId: this.api.options.discord.guildId,
 			parentId: await this.channels.ensure(categoryName, templates.channels.teamsCategory(
 				this.api.options.discord.guildId,
-				await this.getResourceOrFail('role.organiser'),
+				await this.resources.getIdOrFail('role.organiser'),
 				categoryNumber
 			)),
-			organiserId: await this.getResourceOrFail('role.organiser'),
+			organiserId: await this.resources.getIdOrFail('role.organiser'),
 			teamRoleId: await this.roles.ensure(`role.teams.${team.teamNumber}`, templates.roles.team(team.teamNumber)),
 			team
 		};

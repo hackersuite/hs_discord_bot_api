@@ -5,6 +5,7 @@ import { Rest, TokenType } from '@spectacles/rest';
 import { stringify } from 'querystring';
 import axios from 'axios';
 import { createHmac } from 'crypto';
+import { DiscordResource } from '../../entities/DiscordResource';
 
 interface TokenResponse {
 	access_token: string;
@@ -60,9 +61,9 @@ export class OAuth2Controller {
 			// Ensure that the user's team has their roles and channels created
 			await this.parent.ensureTeamState(team);
 			// Add the team's role to the roles list
-			roles.push(await this.parent.getResourceOrFail(`role.teams.${team.teamNumber}`));
+			roles.push(await this.parent.resources.getOrFail(`role.teams.${team.teamNumber}`));
 		}
-		const res = await this.addUserToGuild(accessToken, discordUser.id, roles);
+		const res = await this.addUserToGuild(accessToken, discordUser.id, roles.map(role => role.discordId));
 		// If the user is already a member of the guild, then we get an empty response
 		if (!res.user) {
 			await this.patchMember(discordUser.id, { roles });
@@ -73,13 +74,13 @@ export class OAuth2Controller {
 		return this.rest.patch(`/guilds/${this.api.options.discord.guildId}/members/${userId}`, data);
 	}
 
-	private async getAuthRole(level: AuthLevels) {
+	private async getAuthRole(level: AuthLevels): Promise<DiscordResource> {
 		if (level === AuthLevels.Organiser) {
-			return this.parent.getResourceOrFail('role.organiser');
+			return this.parent.resources.getOrFail('role.organiser');
 		} else if (level === AuthLevels.Volunteer) {
-			return this.parent.getResourceOrFail('role.volunteer');
+			return this.parent.resources.getOrFail('role.volunteer');
 		} else if (level === AuthLevels.Attendee) {
-			return this.parent.getResourceOrFail('role.attendee');
+			return this.parent.resources.getOrFail('role.attendee');
 		}
 		throw new Error(`No role for level ${level}`);
 	}

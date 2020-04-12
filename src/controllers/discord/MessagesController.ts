@@ -14,11 +14,10 @@ export class MessagesController {
 
 	public async create(resourceId: string, channelId: string, data: CreateMessageData) {
 		const message: HasId = await this.parent.rest.post(`/channels/${channelId}/messages`, data);
-		await this.parent.saveResource(resourceId, message.id);
-		return { id: resourceId, discordId: message.id, message };
+		return this.parent.resources.set(resourceId, message.id);
 	}
 
 	public async ensure(resourceId: string, channelId: string, data: CreateMessageData) {
-		return await this.parent.getResource(resourceId) || (await this.create(resourceId, channelId, data)).discordId;
+		return await this.parent.resources.get(resourceId) || this.create(resourceId, channelId, data);
 	}
 }

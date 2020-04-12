@@ -15,13 +15,12 @@ export class RolesController {
 
 	public async create(resourceId: string, data: CreateGuildRoleData) {
 		const role: HasId = await this.parent.rest.post(`/guilds/${this.guildId}/roles`, data);
-		await this.parent.saveResource(resourceId, role.id);
-		return { id: resourceId, discordId: role.id, role };
+		const resource = await this.parent.resources.set(resourceId, role.id);
+		return resource.discordId;
 	}
 
 	public async ensure(resourceId: string, data: CreateGuildRoleData) {
-		return await this.parent.getResource(resourceId) ||
-			(await this.create(resourceId, data)).discordId;
+		return await this.parent.resources.getId(resourceId) || this.create(resourceId, data);
 	}
 
 	public async ensureBasicRoles() {
