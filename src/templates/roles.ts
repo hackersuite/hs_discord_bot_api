@@ -19,6 +19,12 @@ export function attendee(): CreateGuildRoleData {
 	};
 }
 
+export function muted(): CreateGuildRoleData {
+	return {
+		name: `Muted`
+	};
+}
+
 export function team(teamNumber: number): CreateGuildRoleData {
 	return {
 		name: `Team ${teamNumber}`

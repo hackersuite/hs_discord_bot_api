@@ -43,16 +43,18 @@ export class ChannelsController {
 	private async ensureHackathonChannels() {
 		const hackathon = await this.ensure('channel.hackathon', templates.channels.hackathonCategory());
 		const organiserId = await this.parent.resources.getIdOrFail('role.organiser');
+		const mutedId = await this.parent.resources.getIdOrFail('role.muted');
 		const data = {
 			guildId: this.guildId,
 			organiserId,
-			parentId: hackathon
+			parentId: hackathon,
+			mutedId
 		};
 		await this.ensure('channel.hackathon.announcements', templates.channels.hackathonAnnouncements(data));
 		await this.ensure('channel.hackathon.events', templates.channels.hackathonEvents(data));
 		await this.ensure('channel.hackathon.twitter', templates.channels.hackathonTwitter(data));
-		await this.ensure('channel.hackathon.social', templates.channels.hackathonSocial(hackathon));
-		await this.ensure('channel.hackathon.find_team', templates.channels.hackathonFindTeam(hackathon));
+		await this.ensure('channel.hackathon.social', templates.channels.hackathonSocial(data));
+		await this.ensure('channel.hackathon.find_team', templates.channels.hackathonFindTeam(data));
 	}
 
 	private async ensureTeamsChannels() {

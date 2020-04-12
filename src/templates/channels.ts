@@ -58,13 +58,17 @@ export function hackathonCategory(): CreateGuildChannelData {
 	};
 }
 
+function muted(roleId: string): PermissionOverwrite {
+	return 		{
+		type: 'role',
+		id: roleId,
+		deny: PermissionFlag.SEND_MESSAGES
+	};
+}
+
 function publicReadonly(guildId: string, organiserId: string): PermissionOverwrite[] {
 	return [
-		{
-			type: 'role',
-			id: guildId,
-			deny: PermissionFlag.SEND_MESSAGES
-		},
+		muted(guildId),
 		{
 			type: 'role',
 			id: organiserId,
@@ -73,58 +77,62 @@ function publicReadonly(guildId: string, organiserId: string): PermissionOverwri
 	];
 }
 
-interface HackathonReadonlyOptions {
+
+interface HackathonOptions {
 	guildId: string;
 	parentId: string;
 	organiserId: string;
+	mutedId: string;
 }
 
-export function hackathonAnnouncements({ guildId, organiserId, parentId }: HackathonReadonlyOptions): CreateGuildChannelData {
+export function hackathonAnnouncements(options: HackathonOptions): CreateGuildChannelData {
 	return {
 		name: 'announcements',
 		topic: 'Important announcements from the organisers!',
-		parent_id: parentId,
-		permission_overwrites: publicReadonly(guildId, organiserId),
+		parent_id: options.parentId,
+		permission_overwrites: [...publicReadonly(options.guildId, options.organiserId), muted(options.mutedId)],
 		type: ChannelType.TEXT
 	};
 }
 
-export function hackathonEvents({ guildId, organiserId, parentId }: HackathonReadonlyOptions): CreateGuildChannelData {
+export function hackathonEvents(options: HackathonOptions): CreateGuildChannelData {
 	return {
 		name: 'events',
 		topic: 'Important announcements from the events!',
-		parent_id: parentId,
-		permission_overwrites: publicReadonly(guildId, organiserId),
+		parent_id: options.parentId,
+		permission_overwrites: [...publicReadonly(options.guildId, options.organiserId), muted(options.mutedId)],
 		type: ChannelType.TEXT
 	};
 }
 
-export function hackathonTwitter({ guildId, organiserId, parentId }: HackathonReadonlyOptions): CreateGuildChannelData {
+export function hackathonTwitter(options: HackathonOptions): CreateGuildChannelData {
 	return {
 		name: 'twitter',
 		topic: 'Updates from the Twitter feed!',
-		parent_id: parentId,
-		permission_overwrites: publicReadonly(guildId, organiserId),
+		parent_id: options.parentId,
+		permission_overwrites: [...publicReadonly(options.guildId, options.organiserId), muted(options.mutedId)],
 		type: ChannelType.TEXT
 	};
 }
 
-export function hackathonSocial(parentId: string): CreateGuildChannelData {
+export function hackathonSocial(options: HackathonOptions): CreateGuildChannelData {
 	return {
 		name: 'social',
 		topic: 'Chat to other participants!',
-		parent_id: parentId,
+		parent_id: options.parentId,
 		rate_limit_per_user: 5,
+		permission_overwrites: [muted(options.mutedId)],
 		type: ChannelType.TEXT
 	};
 }
 
-export function hackathonFindTeam(parentId: string): CreateGuildChannelData {
+export function hackathonFindTeam(options: HackathonOptions): CreateGuildChannelData {
 	return {
 		name: 'find-a-team',
 		topic: 'Find other team mates here!',
-		parent_id: parentId,
+		parent_id: options.parentId,
 		rate_limit_per_user: 5,
+		permission_overwrites: [muted(options.mutedId)],
 		type: ChannelType.TEXT
 	};
 }
