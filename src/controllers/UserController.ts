@@ -81,7 +81,9 @@ export class UserController {
 
 			if (existing.length > 0) {
 				await Promise.all(
-					existing.map(user => repo.delete(user))
+					existing
+						.filter(user => user.authId !== authId || user.discordId !== discordId)
+						.map(user => repo.delete(user))
 				);
 			}
 
