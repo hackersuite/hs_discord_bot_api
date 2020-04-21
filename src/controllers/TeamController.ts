@@ -1,6 +1,7 @@
 import * as auth from '@unicsmcr/hs_auth_client';
 import HackathonAPI from '../HackathonAPI';
 import { Team } from '../entities/Team';
+import WrappedError from '../utils/WrappedError';
 
 export interface APITeam {
 	authId: string;
@@ -50,6 +51,12 @@ export class TeamController {
 			if (error.message !== 'Team not found') throw error;
 		}
 		return null;
+	}
+
+	public async getTeamOrFail(authId: string) {
+		const team = await this.getTeam(authId);
+		if (!team) throw new WrappedError(`Team ${authId} does not exist - is it linked?`);
+		return team;
 	}
 
 	public async putTeam(authId: string) {

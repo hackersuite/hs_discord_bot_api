@@ -21,6 +21,8 @@ export class DiscordOAuth2VerifyRoute implements RouteHandler {
 		const { code, state } = req.query as QueryParams;
 		if (!code || !state) return res.status(400).json({ message: 'Missing query parameters' });
 		await this.api.controllers.discord.oauth2.processOAuth2(code, state);
-		res.json({ message: 'ok' });
+		const welcomeChannelId = await this.api.controllers.discord.resources.getId('channel.hackathon.welcome');
+		const url = `https://discordapp.com/channels/${this.api.options.discord.guildId}/${welcomeChannelId}`;
+		res.json({ message: 'ok', url });
 	}
 }

@@ -123,7 +123,7 @@ export default class HackathonAPI {
 			});
 		} catch (error) {
 			const id = Date.now();
-			res.status(500).json({ error: `A server error occurred (id: ${id})` });
+			res.status(500).json({ error: `A server error occurred (id: ${id})`, message: error.message });
 			this.options.loggers.api.error({
 				method: req.method,
 				route: req.url,

@@ -50,6 +50,7 @@ export class ChannelsController {
 			parentId: hackathon,
 			mutedId
 		};
+		await this.ensure('channel.hackathon.welcome', templates.channels.hackathonWelcome(data));
 		await this.ensure('channel.hackathon.announcements', templates.channels.hackathonAnnouncements(data));
 		await this.ensure('channel.hackathon.events', templates.channels.hackathonEvents(data));
 		await this.ensure('channel.hackathon.twitter', templates.channels.hackathonTwitter(data));
