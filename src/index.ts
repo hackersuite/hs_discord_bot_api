@@ -1,5 +1,8 @@
 import HackathonAPI, { HackathonAPIOptions } from './HackathonAPI';
 import pino from 'pino';
+import { config as loadEnv } from 'dotenv';
+
+loadEnv();
 
 function getEnv(name: string) {
 	const val = process.env[name];
