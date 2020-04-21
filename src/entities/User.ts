@@ -1,4 +1,5 @@
-import { Entity, Column, PrimaryColumn } from 'typeorm';
+import { Entity, Column, PrimaryColumn, ManyToMany, JoinTable } from 'typeorm';
+import { DiscordResource } from './DiscordResource';
 
 @Entity()
 export class User {
@@ -7,4 +8,8 @@ export class User {
 
 	@Column({ unique: true, nullable: false })
 	public authId!: string;
+
+	@ManyToMany(() => DiscordResource, resource => resource.name)
+	@JoinTable()
+	public roles!: DiscordResource[];
 }

@@ -1,5 +1,6 @@
 import { DiscordController } from '../DiscordController';
 import { CreateGuildRoleData, HasId } from '../../utils/DiscordConstants';
+import languages from '../../utils/ProgrammingLanguages';
 import * as templates from '../../templates';
 
 export class RolesController {
@@ -15,18 +16,22 @@ export class RolesController {
 
 	public async create(resourceId: string, data: CreateGuildRoleData) {
 		const role: HasId = await this.parent.rest.post(`/guilds/${this.guildId}/roles`, data);
-		await this.parent.saveResource(resourceId, role.id);
-		return { id: resourceId, discordId: role.id, role };
+		const resource = await this.parent.resources.set(resourceId, role.id);
+		return resource.discordId;
 	}
 
 	public async ensure(resourceId: string, data: CreateGuildRoleData) {
-		return await this.parent.getResource(resourceId) ||
-			(await this.create(resourceId, data)).discordId;
+		return await this.parent.resources.getId(resourceId) || this.create(resourceId, data);
 	}
 
 	public async ensureBasicRoles() {
 		await this.ensure('role.organiser', templates.roles.organiser());
 		await this.ensure('role.volunteer', templates.roles.volunteer());
 		await this.ensure('role.attendee', templates.roles.attendee());
+		await this.ensure('role.muted', templates.roles.muted());
+
+		for (const language of languages) {
+			await this.ensure(language.id, templates.roles.language(language.name));
+		}
 	}
 }

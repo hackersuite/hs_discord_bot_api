@@ -5,6 +5,7 @@ import { Rest, TokenType } from '@spectacles/rest';
 import { stringify } from 'querystring';
 import axios from 'axios';
 import { createHmac } from 'crypto';
+import { DiscordResource } from '../../entities/DiscordResource';
 
 interface TokenResponse {
 	access_token: string;
@@ -36,36 +37,36 @@ export class OAuth2Controller {
 	public async processOAuth2(code: string, state: string) {
 		// Validate and get the user's Auth ID
 		const authId = this.validateState(state);
+		const authUser = await this.api.controllers.user.getAuthUser(authId);
+		if (!authUser) throw new Error('No auth user!');
 		// Swap the OAuth2 code for an access token
 		const accessToken = await this.getAccessToken(code);
 		// Fetch the details of the user's Discord account using the token
 		const discordUser = await this.fetchUserDetails(accessToken);
-		// Link the Discord account to the Auth ID
-		await this.api.controllers.user.saveUser(discordUser.id, authId);
-
-		// Fetch all the hs_auth details of the user
-		const apiUser = await this.api.controllers.user.getUser(discordUser.id);
-		if (!apiUser) throw new Error('No auth user!');
 
 		// Create an array for the roles the user should have, starting with their auth level
-		const roles = [await this.getAuthRole(apiUser.authLevel)];
+		const roles = [await this.getAuthRole(authUser.authLevel)];
 
 		// If the user is in a team
-		if (apiUser.team) {
+		if (authUser.team) {
 			// Link their team to the database
-			await this.api.controllers.team.putTeam(apiUser.team);
+			await this.api.controllers.team.putTeam(authUser.team);
 			// Fetch the hs_auth details about the team
-			const team = await this.api.controllers.team.getTeam(apiUser.team);
+			const team = await this.api.controllers.team.getTeam(authUser.team);
 			if (!team) throw new Error('Team was not saved properly!');
 			// Ensure that the user's team has their roles and channels created
 			await this.parent.ensureTeamState(team);
 			// Add the team's role to the roles list
-			roles.push(await this.parent.getResourceOrFail(`role.teams.${team.teamNumber}`));
+			roles.push(await this.parent.resources.getOrFail(`role.teams.${team.teamNumber}`));
 		}
-		const res = await this.addUserToGuild(accessToken, discordUser.id, roles);
+
+		// Link the Discord account to the Auth ID
+		await this.api.controllers.user.saveUser(discordUser.id, authId, roles);
+
+		const res = await this.addUserToGuild(accessToken, discordUser.id, roles.map(role => role.discordId));
 		// If the user is already a member of the guild, then we get an empty response
 		if (!res.user) {
-			await this.patchMember(discordUser.id, { roles });
+			await this.patchMember(discordUser.id, { roles: roles.map(role => role.discordId) });
 		}
 	}
 
@@ -73,13 +74,13 @@ export class OAuth2Controller {
 		return this.rest.patch(`/guilds/${this.api.options.discord.guildId}/members/${userId}`, data);
 	}
 
-	private async getAuthRole(level: AuthLevels) {
+	private async getAuthRole(level: AuthLevels): Promise<DiscordResource> {
 		if (level === AuthLevels.Organiser) {
-			return this.parent.getResourceOrFail('role.organiser');
+			return this.parent.resources.getOrFail('role.organiser');
 		} else if (level === AuthLevels.Volunteer) {
-			return this.parent.getResourceOrFail('role.volunteer');
+			return this.parent.resources.getOrFail('role.volunteer');
 		} else if (level === AuthLevels.Attendee) {
-			return this.parent.getResourceOrFail('role.attendee');
+			return this.parent.resources.getOrFail('role.attendee');
 		}
 		throw new Error(`No role for level ${level}`);
 	}

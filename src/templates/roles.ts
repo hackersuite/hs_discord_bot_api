@@ -19,8 +19,22 @@ export function attendee(): CreateGuildRoleData {
 	};
 }
 
+export function muted(): CreateGuildRoleData {
+	return {
+		name: `Muted`
+	};
+}
+
 export function team(teamNumber: number): CreateGuildRoleData {
 	return {
 		name: `Team ${teamNumber}`
+	};
+}
+
+export function language(name: string): CreateGuildRoleData {
+	return {
+		name,
+		mentionable: true,
+		color: 0x1ABC9C
 	};
 }
