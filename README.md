@@ -7,8 +7,7 @@ The API for the HackerSuite Discord bot.
 ## Usage
 
 1. Create an `.env` file (see `.env.example`)
-2. `$ docker build -t hs_discord_bot_api .`
-3. `$ docker-compose up`
+2. `$ make up-dev`
 
 ## License
 
