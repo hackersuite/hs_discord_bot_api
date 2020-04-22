@@ -16,6 +16,12 @@ export class DiscordResourceController {
 		return this.api.db.getRepository(DiscordResource).findOneOrFail(name);
 	}
 
+	public getMany(names: string[]) {
+		return this.api.db.getRepository(DiscordResource).find({
+			where: names.map(name => ({ name }))
+		});
+	}
+
 	public async getId(name: string) {
 		return (await this.get(name))?.discordId;
 	}

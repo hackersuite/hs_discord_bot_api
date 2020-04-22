@@ -65,6 +65,12 @@ export class UserController {
 			.find(user => user.authId === authId);
 	}
 
+	public async getAuthUserOrFail(authId: string) {
+		const user = await this.getAuthUser(authId);
+		if (!user) throw new Error(`User ${authId} not found on auth system!`);
+		return user;
+	}
+
 	/**
 	 * Will save a discord <-> hs_auth relationship in users table
 	 * If a relationship exists already involving either the discordId or authId, it will be destroyed.

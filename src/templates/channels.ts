@@ -85,6 +85,16 @@ interface HackathonOptions {
 	mutedId: string;
 }
 
+export function hackathonWelcome(options: HackathonOptions): CreateGuildChannelData {
+	return {
+		name: 'welcome',
+		topic: 'Welcome to StudentHack 2020\'s Discord server!',
+		parent_id: options.parentId,
+		permission_overwrites: publicReadonly(options.guildId, options.organiserId),
+		type: ChannelType.TEXT
+	};
+}
+
 export function hackathonAnnouncements(options: HackathonOptions): CreateGuildChannelData {
 	return {
 		name: 'announcements',

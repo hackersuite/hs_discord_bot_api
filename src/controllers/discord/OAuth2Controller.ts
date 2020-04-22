@@ -6,6 +6,11 @@ import { stringify } from 'querystring';
 import axios from 'axios';
 import { createHmac } from 'crypto';
 import { DiscordResource } from '../../entities/DiscordResource';
+import WrappedError from '../../utils/WrappedError';
+
+function wrapError<T>(promise: Promise<T>, message: string): Promise<T> {
+	return promise.catch(error => Promise.reject(new WrappedError(message, error)));
+}
 
 interface TokenResponse {
 	access_token: string;
@@ -37,36 +42,46 @@ export class OAuth2Controller {
 	public async processOAuth2(code: string, state: string) {
 		// Validate and get the user's Auth ID
 		const authId = this.validateState(state);
-		const authUser = await this.api.controllers.user.getAuthUser(authId);
-		if (!authUser) throw new Error('No auth user!');
+		const authUser = await wrapError(this.api.controllers.user.getAuthUserOrFail(authId),
+			`Error retrieving user ${authId} on auth system`);
 		// Swap the OAuth2 code for an access token
-		const accessToken = await this.getAccessToken(code);
+		const accessToken = await wrapError(this.getAccessToken(code), 'Error retrieving access token');
 		// Fetch the details of the user's Discord account using the token
-		const discordUser = await this.fetchUserDetails(accessToken);
+		const discordUser = await wrapError(this.fetchUserDetails(accessToken), 'Error fetching data from Discord');
 
 		// Create an array for the roles the user should have, starting with their auth level
-		const roles = [await this.getAuthRole(authUser.authLevel)];
+		const roles = [await wrapError(this.getAuthRole(authUser.authLevel),
+			`Unable to find the Discord role for auth level ${authUser.authLevel}`)];
 
 		// If the user is in a team
 		if (authUser.team) {
 			// Link their team to the database
-			await this.api.controllers.team.putTeam(authUser.team);
+			await wrapError(this.api.controllers.team.putTeam(authUser.team),
+				`Failed to register team (Team ID: ${authUser.team})`);
+
 			// Fetch the hs_auth details about the team
-			const team = await this.api.controllers.team.getTeam(authUser.team);
-			if (!team) throw new Error('Team was not saved properly!');
+			const team = await this.api.controllers.team.getTeamOrFail(authUser.team);
+
 			// Ensure that the user's team has their roles and channels created
-			await this.parent.ensureTeamState(team);
+			await wrapError(this.parent.ensureTeamState(team), `Error creating team ${authUser.team} channels/roles`);
 			// Add the team's role to the roles list
 			roles.push(await this.parent.resources.getOrFail(`role.teams.${team.teamNumber}`));
 		}
 
 		// Link the Discord account to the Auth ID
-		await this.api.controllers.user.saveUser(discordUser.id, authId, roles);
+		await wrapError(this.api.controllers.user.saveUser(discordUser.id, authId, roles),
+			'Unable to finalise account link');
 
-		const res = await this.addUserToGuild(accessToken, discordUser.id, roles.map(role => role.discordId));
+		const res = await wrapError(
+			this.addUserToGuild(accessToken, discordUser.id, roles.map(role => role.discordId)),
+			'An error occurred when trying to add you to the Hackathon server'
+		);
 		// If the user is already a member of the guild, then we get an empty response
 		if (!res.user) {
-			await this.patchMember(discordUser.id, { roles: roles.map(role => role.discordId) });
+			await wrapError(
+				this.patchMember(discordUser.id, { roles: roles.map(role => role.discordId) }),
+				'An error occurred when trying to update your roles on the Hackathon server'
+			);
 		}
 	}
 

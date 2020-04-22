@@ -52,6 +52,12 @@ export class TeamController {
 		return null;
 	}
 
+	public async getTeamOrFail(authId: string) {
+		const team = await this.getTeam(authId);
+		if (!team) throw new Error(`Team ${authId} does not exist - is it linked?`);
+		return team;
+	}
+
 	public async putTeam(authId: string) {
 		const repo = this.api.db.getRepository(Team);
 		let team = await repo.findOne({ authId });
