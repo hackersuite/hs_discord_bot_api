@@ -157,10 +157,20 @@ export class UserController {
 	}
 
 	private transformAuthUser(authUser: auth.RequestUser, dbUser: User): APIUser {
+		/*
+			For SH2020, mostly everyone attending will still have an auth level of applicant
+			To make it work for now, an auth level of applicant is just remapped to attendee
+
+			Once this is fixed, this change should be removed and the authLevel should be
+			returned as is
+		*/
+		const authLevel = authUser.authLevel === auth.AuthLevels.Applicant
+			? auth.AuthLevels.Attendee
+			: authUser.authLevel;
 		return {
 			authId: authUser.authId,
 			discordId: dbUser.discordId,
-			authLevel: authUser.authLevel,
+			authLevel,
 			email: authUser.email,
 			name: authUser.name,
 			team: authUser.team,
