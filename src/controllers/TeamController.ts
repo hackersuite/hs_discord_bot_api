@@ -1,7 +1,6 @@
 import * as auth from '@unicsmcr/hs_auth_client';
 import HackathonAPI from '../HackathonAPI';
 import { Team } from '../entities/Team';
-import WrappedError from '../utils/WrappedError';
 
 export interface APITeam {
 	authId: string;
