@@ -55,7 +55,7 @@ export class TeamController {
 
 	public async getTeamOrFail(authId: string) {
 		const team = await this.getTeam(authId);
-		if (!team) throw new WrappedError(`Team ${authId} does not exist - is it linked?`);
+		if (!team) throw new Error(`Team ${authId} does not exist - is it linked?`);
 		return team;
 	}
 
