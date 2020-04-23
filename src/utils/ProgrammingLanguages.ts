@@ -55,6 +55,22 @@ const languages: Language[] = [
 	{
 		name: 'HTML/CSS',
 		id: 'role.languages.html_css'
+	},
+	{
+		name: 'React',
+		id: 'role.languages.react'
+	},
+	{
+		name: 'Vue',
+		id: 'role.languages.vue'
+	},
+	{
+		name: 'Android',
+		id: 'role.languages.android'
+	},
+	{
+		name: 'PHP',
+		id: 'role.languages.php'
 	}
 ];
 
