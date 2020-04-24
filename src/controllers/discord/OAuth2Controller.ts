@@ -78,19 +78,19 @@ export class OAuth2Controller {
 		}
 
 		// Link the Discord account to the Auth ID
-		await wrapError(this.api.controllers.user.saveUser(discordUser.id, authId, roles),
+		const user = await wrapError(this.api.controllers.user.saveUser(discordUser.id, authId, roles),
 			'Unable to finalise account link');
 
 		const res = accessToken
 			? await wrapError(
-				this.addUserToGuild(accessToken, discordUser.id, roles.map(role => role.discordId)),
+				this.addUserToGuild(accessToken, discordUser.id, user.roles.map(role => role.discordId)),
 				'An error occurred when trying to add you to the Hackathon server'
 			)
 			: {};
 		// If the user is already a member of the guild, then we get an empty response
 		if (!res.user) {
 			await wrapError(
-				this.patchMember(discordUser.id, { roles: roles.map(role => role.discordId) }),
+				this.patchMember(discordUser.id, { roles: user.roles.map(role => role.discordId) }),
 				'An error occurred when trying to update your roles on the Hackathon server'
 			);
 		}
