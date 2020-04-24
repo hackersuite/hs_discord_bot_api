@@ -60,6 +60,12 @@ export class UserController {
 		}
 	}
 
+	public async getUserOrFail(discordId: string) {
+		const user = await this.getUser(discordId);
+		if (!user) throw new Error(`User ${discordId} is not linked`);
+		return user;
+	}
+
 	public async getAuthUser(authId: string) {
 		return (await auth.getAllUsers(this.api.options.hsAuth.token))
 			.find(user => user.authId === authId);
