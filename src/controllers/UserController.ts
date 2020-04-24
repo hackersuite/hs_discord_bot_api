@@ -88,7 +88,8 @@ export class UserController {
 				where: [
 					{ authId },
 					{ discordId }
-				]
+				],
+				relations: ['roles']
 			});
 
 			const refreshUser = existing.find(user => user.authId === authId && user.discordId === discordId);
