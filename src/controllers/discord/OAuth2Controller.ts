@@ -42,13 +42,22 @@ export class OAuth2Controller {
 	public async processOAuth2(code: string, state: string) {
 		// Validate and get the user's Auth ID
 		const authId = this.validateState(state);
-		const authUser = await wrapError(this.api.controllers.user.getAuthUserOrFail(authId),
-			`Error retrieving user ${authId} on auth system`);
 		// Swap the OAuth2 code for an access token
 		const accessToken = await wrapError(this.getAccessToken(code), 'Error retrieving access token');
 		// Fetch the details of the user's Discord account using the token
 		const discordUser = await wrapError(this.fetchUserDetails(accessToken), 'Error fetching data from Discord');
+		return this.syncMemberState(authId, discordUser, accessToken);
+	}
 
+	public async syncMember(discordId: string) {
+		const authId = (await this.api.controllers.user.getUserOrFail(discordId)).authId;
+		const discordUser = await wrapError(this.fetchDiscordUser(discordId), `Failed to fetch ${discordId} from Discord`);
+		return this.syncMemberState(authId, discordUser);
+	}
+
+	private async syncMemberState(authId: string, discordUser: DiscordUser, accessToken?: string) {
+		const authUser = await wrapError(this.api.controllers.user.getAuthUserOrFail(authId),
+			`Error retrieving user ${authId} on auth system`);
 		// Create an array for the roles the user should have, starting with their auth level
 		const roles = [await wrapError(this.getAuthRole(authUser.authLevel),
 			`Unable to find the Discord role for auth level ${authUser.authLevel}`)];
@@ -72,10 +81,12 @@ export class OAuth2Controller {
 		await wrapError(this.api.controllers.user.saveUser(discordUser.id, authId, roles),
 			'Unable to finalise account link');
 
-		const res = await wrapError(
-			this.addUserToGuild(accessToken, discordUser.id, roles.map(role => role.discordId)),
-			'An error occurred when trying to add you to the Hackathon server'
-		);
+		const res = accessToken
+			? await wrapError(
+				this.addUserToGuild(accessToken, discordUser.id, roles.map(role => role.discordId)),
+				'An error occurred when trying to add you to the Hackathon server'
+			)
+			: {};
 		// If the user is already a member of the guild, then we get an empty response
 		if (!res.user) {
 			await wrapError(
@@ -105,6 +116,10 @@ export class OAuth2Controller {
 			tokenType: TokenType.BEARER
 		});
 		return await client.get(`/users/@me`) as DiscordUser;
+	}
+
+	private async fetchDiscordUser(discordId: string): Promise<DiscordUser> {
+		return await this.rest.get(`/users/${discordId}`) as DiscordUser;
 	}
 
 	private addUserToGuild(accessToken: string, userId: string, roles: string[]) {
