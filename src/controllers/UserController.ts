@@ -91,6 +91,23 @@ export class UserController {
 				]
 			});
 
+			const refreshUser = existing.find(user => user.authId === authId && user.discordId === discordId);
+			if (refreshUser) {
+				// We are just updating roles here, copy the roles given to us first
+				const newRoles = [...roles];
+				// Now copy over relevant roles from existing relation
+				for (const existingRole of refreshUser.roles) {
+					// Any AuthLevel roles and team roles should be ignored, copy everything else
+					if (!['role.organiser', 'role.volunteer', 'role.attendee'].includes(existingRole.name) &&
+						!existingRole.name.startsWith('role.teams')) {
+						newRoles.push(existingRole);
+					}
+				}
+				// Save these roles
+				refreshUser.roles = newRoles;
+				return repo.save(refreshUser);
+			}
+
 			if (existing.length > 0) {
 				await Promise.all(
 					existing
