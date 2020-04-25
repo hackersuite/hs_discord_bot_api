@@ -106,7 +106,7 @@ export class UserController {
 				}
 				// Save these roles
 				refreshUser.roles = newRoles;
-				return repo.save(refreshUser);
+				return manager.save(refreshUser);
 			}
 
 			if (existing.length > 0) {
@@ -118,7 +118,7 @@ export class UserController {
 			user.authId = authId;
 			user.roles = roles;
 
-			return repo.save(user);
+			return manager.save(user);
 		});
 	}
 
