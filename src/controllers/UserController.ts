@@ -110,7 +110,7 @@ export class UserController {
 			}
 
 			if (existing.length > 0) {
-				await Promise.all(existing.map(user => repo.delete(user)));
+				await manager.delete(User, existing.map(user => user.discordId));
 			}
 
 			const user = new User();
