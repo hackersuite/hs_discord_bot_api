@@ -18,6 +18,9 @@ export class UserRolesRoute implements RouteHandler {
 	}
 
 	public async put(req: Request, res: Response) {
+		if (!['add', 'set', 'remove'].includes(req.body.method)) {
+			throw new Error(`method parameter must be one of: add, set, remove`);
+		}
 		const body = req.body as EditPayload;
 		if (body.method === 'add') {
 			res.json({
