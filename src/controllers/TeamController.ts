@@ -38,24 +38,11 @@ export class TeamController {
 	}
 
 	public async getTeam(authId: string) {
-		try {
-			const [dbTeam, authTeam] = await Promise.all([
-				this.api.db.getRepository(Team).findOne({ authId }),
-				auth.getTeam(this.api.options.hsAuth.token, authId)
-			]);
-			if (!dbTeam || !authTeam) throw new Error('Team not found');
-			return this.transformAuthTeam(authTeam, dbTeam.teamNumber);
-		} catch (error) {
-			// auth client + above throw the same error for non-existant team
-			if (error.message !== 'Team not found') throw error;
-		}
-		return null;
-	}
-
-	public async getTeamOrFail(authId: string) {
-		const team = await this.getTeam(authId);
-		if (!team) throw new Error(`Team ${authId} does not exist - is it linked?`);
-		return team;
+		const [dbTeam, authTeam] = await Promise.all([
+			this.api.db.getRepository(Team).findOneOrFail({ authId }),
+			auth.getTeam(this.api.options.hsAuth.token, authId)
+		]);
+		return this.transformAuthTeam(authTeam, dbTeam.teamNumber);
 	}
 
 	public async putTeam(authId: string) {

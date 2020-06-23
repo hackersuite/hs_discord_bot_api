@@ -13,8 +13,11 @@ export class TeamRoute implements RouteHandler {
 	}
 
 	public async get(req: Request, res: Response) {
-		const team = await this.api.controllers.team.getTeam(req.params.id);
-		if (!team) res.status(404);
-		res.json({ team });
+		try {
+			const team = await this.api.controllers.team.getTeam(req.params.id);
+			res.json({ team });
+		} catch (err) {
+			res.status(404);
+		}
 	}
 }

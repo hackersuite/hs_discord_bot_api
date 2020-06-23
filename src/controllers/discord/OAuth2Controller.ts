@@ -69,7 +69,7 @@ export class OAuth2Controller {
 				`Failed to register team (Team ID: ${authUser.team})`);
 
 			// Fetch the hs_auth details about the team
-			const team = await this.api.controllers.team.getTeamOrFail(authUser.team);
+			const team = await wrapError(this.api.controllers.team.getTeam(authUser.team), `Error fetching team ${authUser.team} - is it linked?`);
 
 			// Ensure that the user's team has their roles and channels created
 			await wrapError(this.parent.ensureTeamState(team), `Error creating team ${authUser.team} channels/roles`);
