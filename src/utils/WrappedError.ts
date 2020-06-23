@@ -6,7 +6,7 @@ export default class WrappedError extends Error {
 		this.name = 'WrappedError';
 		if (rootError) {
 			this.rootError = rootError;
-			this.stack = `Error description: ${message}\n${rootError.stack}`;
+			this.stack = `Error description: ${message}\n${rootError.stack ?? ''}`;
 		}
 	}
 }

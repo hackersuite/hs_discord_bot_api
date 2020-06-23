@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/naming-convention */
 export interface CreateGuildRoleData {
 	name?: string;
 	permissions?: number;
