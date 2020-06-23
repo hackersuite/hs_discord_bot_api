@@ -18,6 +18,6 @@ export class MessagesController {
 	}
 
 	public async ensure(resourceId: string, channelId: string, data: CreateMessageData) {
-		return await this.parent.resources.get(resourceId) || this.create(resourceId, channelId, data);
+		return await this.parent.resources.get(resourceId) ?? this.create(resourceId, channelId, data);
 	}
 }

@@ -13,9 +13,12 @@ export class UserRoute implements RouteHandler {
 	}
 
 	public async get(req: Request, res: Response) {
-		const user = await this.api.controllers.user.getUser(req.params.id);
-		if (!user) res.status(404);
-		res.json({ user });
+		try {
+			const user = await this.api.controllers.user.getUser(req.params.id);
+			res.json({ user });
+		} catch (err) {
+			res.status(404);
+		}
 	}
 
 	public async delete(req: Request, res: Response) {

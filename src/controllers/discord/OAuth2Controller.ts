@@ -50,7 +50,7 @@ export class OAuth2Controller {
 	}
 
 	public async syncMember(discordId: string) {
-		const authId = (await this.api.controllers.user.getUserOrFail(discordId)).authId;
+		const authId = (await wrapError(this.api.controllers.user.getUser(discordId), `Failed to fetch user for discord id ${discordId}`)).authId;
 		const discordUser = await wrapError(this.fetchDiscordUser(discordId), `Failed to fetch ${discordId} from Discord`);
 		return this.syncMemberState(authId, discordUser);
 	}
@@ -69,7 +69,8 @@ export class OAuth2Controller {
 				`Failed to register team (Team ID: ${authUser.team})`);
 
 			// Fetch the hs_auth details about the team
-			const team = await wrapError(this.api.controllers.team.getTeam(authUser.team), `Error fetching team ${authUser.team} - is it linked?`);
+			const team = await wrapError(this.api.controllers.team.getTeam(authUser.team),
+				`Error fetching team ${authUser.team} - is it linked?`);
 
 			// Ensure that the user's team has their roles and channels created
 			await wrapError(this.parent.ensureTeamState(team), `Error creating team ${authUser.team} channels/roles`);
@@ -96,7 +97,7 @@ export class OAuth2Controller {
 		}
 	}
 
-	private async patchMember(userId: string, data: object) {
+	private async patchMember(userId: string, data: Record<string, any>) {
 		return this.rest.patch(`/guilds/${this.api.options.discord.guildId}/members/${userId}`, data);
 	}
 

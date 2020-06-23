@@ -20,7 +20,7 @@ export class ChannelsController {
 	}
 
 	public async ensure(resourceId: string, data: CreateGuildChannelData) {
-		return await this.parent.resources.getId(resourceId) || this.create(resourceId, data);
+		return await this.parent.resources.getId(resourceId) ?? this.create(resourceId, data);
 	}
 
 	public async ensureChannels() {

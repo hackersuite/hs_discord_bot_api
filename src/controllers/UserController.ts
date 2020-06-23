@@ -43,14 +43,13 @@ export class UserController {
 
 	public async getUser(discordId: string) {
 		const [dbUser, authUsers] = await Promise.all([
-			this.api.db.getRepository(User).findOne({
+			this.api.db.getRepository(User).findOneOrFail({
 				where: { discordId },
 				relations: ['roles']
 			}),
 			auth.getUsers(this.api.options.hsAuth.token)
 		]);
 
-		if (!dbUser || !authUsers) return;
 		const targetId = dbUser.authId;
 
 		for (const user of authUsers) {
@@ -58,12 +57,7 @@ export class UserController {
 				return this.transformAuthUser(user, dbUser);
 			}
 		}
-	}
-
-	public async getUserOrFail(discordId: string) {
-		const user = await this.getUser(discordId);
-		if (!user) throw new Error(`User ${discordId} is not linked`);
-		return user;
+		throw new Error(`User ${targetId} not found`);
 	}
 
 	public async getAuthUser(authId: string) {
