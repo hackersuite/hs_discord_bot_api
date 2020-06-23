@@ -6,7 +6,7 @@ import { DiscordResource } from '../entities/DiscordResource';
 export interface APIUser {
 	authId: string;
 	discordId: string;
-	authLevel: auth.AuthLevels;
+	authLevel: auth.AuthLevel;
 	email: string;
 	name: string;
 	team?: string;
@@ -23,7 +23,7 @@ export class UserController {
 	public async getUsers() {
 		const [dbUsers, authUsers] = await Promise.all([
 			this.api.db.getRepository(User).find({ relations: ['roles'] }),
-			auth.getAllUsers(this.api.options.hsAuth.token)
+			auth.getUsers(this.api.options.hsAuth.token)
 		]);
 
 		const authMap: Map<string, User> = new Map();
@@ -33,7 +33,7 @@ export class UserController {
 
 		const users = [];
 		for (const user of authUsers) {
-			const dbUser = authMap.get(user.authId);
+			const dbUser = authMap.get(user.id);
 			if (dbUser) {
 				users.push(this.transformAuthUser(user, dbUser));
 			}
@@ -47,14 +47,14 @@ export class UserController {
 				where: { discordId },
 				relations: ['roles']
 			}),
-			auth.getAllUsers(this.api.options.hsAuth.token)
+			auth.getUsers(this.api.options.hsAuth.token)
 		]);
 
 		if (!dbUser || !authUsers) return;
 		const targetId = dbUser.authId;
 
 		for (const user of authUsers) {
-			if (user.authId === targetId) {
+			if (user.id === targetId) {
 				return this.transformAuthUser(user, dbUser);
 			}
 		}
@@ -67,8 +67,8 @@ export class UserController {
 	}
 
 	public async getAuthUser(authId: string) {
-		return (await auth.getAllUsers(this.api.options.hsAuth.token))
-			.find(user => user.authId === authId);
+		return (await auth.getUsers(this.api.options.hsAuth.token))
+			.find(user => user.id === authId);
 	}
 
 	public async getAuthUserOrFail(authId: string) {
@@ -176,9 +176,9 @@ export class UserController {
 		});
 	}
 
-	private transformAuthUser(authUser: auth.RequestUser, dbUser: User): APIUser {
+	private transformAuthUser(authUser: auth.User, dbUser: User): APIUser {
 		return {
-			authId: authUser.authId,
+			authId: authUser.id,
 			discordId: dbUser.discordId,
 			authLevel: authUser.authLevel,
 			email: authUser.email,

@@ -29,7 +29,7 @@ export class TeamController {
 
 		const teams = [];
 		for (const team of authTeams) {
-			const dbTeam = linkedIds.get(team._id);
+			const dbTeam = linkedIds.get(team.id);
 			if (dbTeam) {
 				teams.push(this.transformAuthTeam(team, dbTeam.teamNumber));
 			}
@@ -70,13 +70,13 @@ export class TeamController {
 	public async putAllTeams() {
 		const teams = await auth.getTeams(this.api.options.hsAuth.token);
 		for (const team of teams) {
-			await this.putTeam(team._id);
+			await this.putTeam(team.id);
 		}
 	}
 
 	private transformAuthTeam(team: auth.Team, teamNumber: number): APITeam {
 		return {
-			authId: team._id,
+			authId: team.id,
 			creator: team.creator,
 			name: team.name,
 			teamNumber

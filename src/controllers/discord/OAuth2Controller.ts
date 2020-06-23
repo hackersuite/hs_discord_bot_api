@@ -1,6 +1,6 @@
 import { DiscordController } from '../DiscordController';
 import { DiscordUser } from '../../utils/DiscordConstants';
-import { AuthLevels } from '@unicsmcr/hs_auth_client';
+import { AuthLevel } from '@unicsmcr/hs_auth_client';
 import { Rest, TokenType } from '@spectacles/rest';
 import { stringify } from 'querystring';
 import axios from 'axios';
@@ -100,12 +100,12 @@ export class OAuth2Controller {
 		return this.rest.patch(`/guilds/${this.api.options.discord.guildId}/members/${userId}`, data);
 	}
 
-	private async getAuthRole(level: AuthLevels): Promise<DiscordResource> {
-		if (level === AuthLevels.Organiser) {
+	private async getAuthRole(level: AuthLevel): Promise<DiscordResource> {
+		if (level === AuthLevel.Organiser) {
 			return this.parent.resources.getOrFail('role.organiser');
-		} else if (level === AuthLevels.Volunteer) {
+		} else if (level === AuthLevel.Volunteer) {
 			return this.parent.resources.getOrFail('role.volunteer');
-		} else if (level === AuthLevels.Attendee) {
+		} else if (level === AuthLevel.Attendee) {
 			return this.parent.resources.getOrFail('role.attendee');
 		}
 		throw new Error(`No role for level ${level}`);
