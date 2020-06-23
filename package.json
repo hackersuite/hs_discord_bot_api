@@ -3,7 +3,6 @@
   "version": "0.0.1",
   "description": "The API for the HackerSuite Discord bot",
   "scripts": {
-    "prebuild": "npm run test",
     "build": "rimraf dist && tsc",
     "test": "npm run lint",
     "start": "npm run build && node dist | pino-pretty",
