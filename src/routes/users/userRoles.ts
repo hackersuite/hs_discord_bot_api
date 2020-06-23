@@ -27,7 +27,7 @@ export class UserRolesRoute implements RouteHandler {
 			res.json({
 				user: await this.api.controllers.user.setRoles(req.params.id, body.roles)
 			});
-		} else if (body.method === 'remove') {
+		} else {
 			res.json({
 				user: await this.api.controllers.user.removeRoles(req.params.id, body.roles)
 			});
