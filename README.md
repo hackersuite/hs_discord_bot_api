@@ -1,6 +1,6 @@
 # hs_discord_bot_api
 
-![Tests](https://github.com/unicsmcr/hs_discord_bot_api/workflows/Tests/badge.svg)
+![Lint](https://github.com/unicsmcr/hs_discord_bot_api/workflows/lint/badge.svg)
 
 The API for the HackerSuite Discord bot.
 
