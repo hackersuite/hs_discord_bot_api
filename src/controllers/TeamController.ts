@@ -1,6 +1,7 @@
 import * as auth from '@unicsmcr/hs_auth_client';
 import HackathonAPI from '../HackathonAPI';
 import { Team } from '../entities/Team';
+import { authClient } from '../utils/AuthClient';
 
 export interface APITeam {
 	authId: string;
@@ -19,7 +20,7 @@ export class TeamController {
 	public async getTeams() {
 		const [dbTeams, authTeams] = await Promise.all([
 			this.api.db.getRepository(Team).find(),
-			auth.getTeams(this.api.options.hsAuth.token)
+			authClient.getTeams(this.api.options.hsAuth.token)
 		]);
 
 		const linkedIds: Map<string, Team> = new Map();
@@ -40,7 +41,7 @@ export class TeamController {
 	public async getTeam(authId: string) {
 		const [dbTeam, authTeam] = await Promise.all([
 			this.api.db.getRepository(Team).findOneOrFail({ authId }),
-			auth.getTeam(this.api.options.hsAuth.token, authId)
+			authClient.getTeam(this.api.options.hsAuth.token, authId)
 		]);
 		return this.transformAuthTeam(authTeam, dbTeam.teamNumber);
 	}
@@ -55,7 +56,7 @@ export class TeamController {
 	}
 
 	public async putAllTeams() {
-		const teams = await auth.getTeams(this.api.options.hsAuth.token);
+		const teams = await authClient.getTeams(this.api.options.hsAuth.token);
 		for (const team of teams) {
 			await this.putTeam(team.id);
 		}

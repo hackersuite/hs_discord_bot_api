@@ -2,6 +2,7 @@ import * as auth from '@unicsmcr/hs_auth_client';
 import HackathonAPI from '../HackathonAPI';
 import { User } from '../entities/User';
 import { DiscordResource } from '../entities/DiscordResource';
+import { authClient } from '../utils/AuthClient';
 
 export interface APIUser {
 	authId: string;
@@ -23,7 +24,7 @@ export class UserController {
 	public async getUsers() {
 		const [dbUsers, authUsers] = await Promise.all([
 			this.api.db.getRepository(User).find({ relations: ['roles'] }),
-			auth.getUsers(this.api.options.hsAuth.token)
+			authClient.getUsers(this.api.options.hsAuth.token)
 		]);
 
 		const authMap: Map<string, User> = new Map();
@@ -47,7 +48,7 @@ export class UserController {
 				where: { discordId },
 				relations: ['roles']
 			}),
-			auth.getUsers(this.api.options.hsAuth.token)
+			authClient.getUsers(this.api.options.hsAuth.token)
 		]);
 
 		const targetId = dbUser.authId;
@@ -61,7 +62,7 @@ export class UserController {
 	}
 
 	public async getAuthUser(authId: string) {
-		return (await auth.getUsers(this.api.options.hsAuth.token))
+		return (await authClient.getUsers(this.api.options.hsAuth.token))
 			.find(user => user.id === authId);
 	}
 
