@@ -1,12 +1,13 @@
 import { DiscordController } from '../DiscordController';
 import { DiscordUser } from '../../utils/DiscordConstants';
-import { AuthLevel } from '@unicsmcr/hs_auth_client';
+import { User } from '@unicsmcr/hs_auth_client';
 import { Rest, TokenType } from '@spectacles/rest';
 import { stringify } from 'querystring';
 import axios from 'axios';
 import { createHmac } from 'crypto';
 import { DiscordResource } from '../../entities/DiscordResource';
 import WrappedError from '../../utils/WrappedError';
+import { authClient } from '../../utils/AuthClient';
 
 function wrapError<T>(promise: Promise<T>, message: string): Promise<T> {
 	return promise.catch(error => Promise.reject(new WrappedError(message, error)));
@@ -18,6 +19,12 @@ interface TokenResponse {
 	expires_in: number;
 	refresh_token: string;
 	scope: string;
+}
+
+enum AuthRole {
+	Organiser = 'hs:hs_discord:guild:organiser',
+	Volunteer = 'hs:hs_discord:guild:volunteer',
+	Attendee = 'hs:hs_discord:guild:attendee'
 }
 
 export class OAuth2Controller {
@@ -59,8 +66,8 @@ export class OAuth2Controller {
 		const authUser = await wrapError(this.api.controllers.user.getAuthUserOrFail(authId),
 			`Error retrieving user ${authId} on auth system`);
 		// Create an array for the roles the user should have, starting with their auth level
-		const roles = [await wrapError(this.getAuthRole(authUser.authLevel),
-			`Unable to find the Discord role for auth level ${authUser.authLevel}`)];
+		const roles = [await wrapError(this.getAuthRole(authUser),
+			`Unable to find the Discord role for auth user ${authUser.id}`)];
 
 		// If the user is in a team
 		if (authUser.team) {
@@ -101,15 +108,18 @@ export class OAuth2Controller {
 		return this.rest.patch(`/guilds/${this.api.options.discord.guildId}/members/${userId}`, data);
 	}
 
-	private async getAuthRole(level: AuthLevel): Promise<DiscordResource> {
-		if (level === AuthLevel.Organiser) {
+	private async getAuthRole(user: User): Promise<DiscordResource> {
+		// todo: once the auth client is updated, pass the user's id in as a parameter here.
+		const resources = await authClient.getAuthorizedResources(this.api.options.hsAuth.token, Object.values(AuthRole));
+
+		if (resources.includes(AuthRole.Organiser)) {
 			return this.parent.resources.getOrFail('role.organiser');
-		} else if (level === AuthLevel.Volunteer) {
+		} else if (resources.includes(AuthRole.Volunteer)) {
 			return this.parent.resources.getOrFail('role.volunteer');
-		} else if (level === AuthLevel.Attendee) {
+		} else if (resources.includes(AuthRole.Attendee)) {
 			return this.parent.resources.getOrFail('role.attendee');
 		}
-		throw new Error(`No role for level ${level}`);
+		throw new Error(`No role for user ${user.id}`);
 	}
 
 	private async fetchUserDetails(accessToken: string) {
