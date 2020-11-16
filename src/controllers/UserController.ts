@@ -92,7 +92,7 @@ export class UserController {
 				const newRoles = [...roles];
 				// Now copy over relevant roles from existing relation
 				for (const existingRole of refreshUser.roles) {
-					// Any AuthLevel roles and team roles should be ignored, copy everything else
+					// Any auth roles and team roles should be ignored, copy everything else
 					if (!['role.organiser', 'role.volunteer', 'role.attendee'].includes(existingRole.name) &&
 						!existingRole.name.startsWith('role.teams')) {
 						newRoles.push(existingRole);
