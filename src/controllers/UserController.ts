@@ -7,7 +7,6 @@ import { authClient } from '../utils/AuthClient';
 export interface APIUser {
 	authId: string;
 	discordId: string;
-	authLevel: auth.AuthLevel;
 	email: string;
 	name: string;
 	team?: string;
@@ -175,7 +174,6 @@ export class UserController {
 		return {
 			authId: authUser.id,
 			discordId: dbUser.discordId,
-			authLevel: authUser.authLevel,
 			email: authUser.email,
 			name: authUser.name,
 			team: authUser.team,
