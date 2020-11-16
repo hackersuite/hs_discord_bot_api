@@ -109,7 +109,6 @@ export class OAuth2Controller {
 	}
 
 	private async getAuthRole(user: User): Promise<DiscordResource> {
-		// todo: once the auth client is updated, pass the user's id in as a parameter here.
 		const resources = await authClient.getAuthorizedResources(this.api.options.hsAuth.token, Object.values(AuthRole), user.id);
 
 		if (resources.includes(AuthRole.Organiser)) {
