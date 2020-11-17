@@ -21,7 +21,7 @@ interface TokenResponse {
 	scope: string;
 }
 
-enum AuthRole {
+enum DiscordRoleURI {
 	Organiser = 'hs:hs_discord:guild:organiser',
 	Volunteer = 'hs:hs_discord:guild:volunteer',
 	Attendee = 'hs:hs_discord:guild:attendee'
@@ -66,7 +66,7 @@ export class OAuth2Controller {
 		const authUser = await wrapError(this.api.controllers.user.getAuthUserOrFail(authId),
 			`Error retrieving user ${authId} on auth system`);
 		// Create an array for the roles the user should have, starting with their auth level
-		const roles = [await wrapError(this.getAuthRole(authUser),
+		const roles = [await wrapError(this.getAccessLevelRole(authUser),
 			`Unable to find the Discord role for auth user ${authUser.id}`)];
 
 		// If the user is in a team
@@ -108,14 +108,19 @@ export class OAuth2Controller {
 		return this.rest.patch(`/guilds/${this.api.options.discord.guildId}/members/${userId}`, data);
 	}
 
-	private async getAuthRole(user: User): Promise<DiscordResource> {
-		const resources = await authClient.getAuthorizedResources(this.api.options.hsAuth.token, Object.values(AuthRole), user.id);
+	/**
+	 * Gets the access level Discord role for an auth user (e.g. organiser, volunteer etc.) that dictates
+	 * which channels they are able to see and type in
+	 * @param user The user to get the access level role of
+	 */
+	private async getAccessLevelRole(user: User): Promise<DiscordResource> {
+		const resources = await authClient.getAuthorizedResources(this.api.options.hsAuth.token, Object.values(DiscordRoleURI), user.id);
 
-		if (resources.includes(AuthRole.Organiser)) {
+		if (resources.includes(DiscordRoleURI.Organiser)) {
 			return this.parent.resources.getOrFail('role.organiser');
-		} else if (resources.includes(AuthRole.Volunteer)) {
+		} else if (resources.includes(DiscordRoleURI.Volunteer)) {
 			return this.parent.resources.getOrFail('role.volunteer');
-		} else if (resources.includes(AuthRole.Attendee)) {
+		} else if (resources.includes(DiscordRoleURI.Attendee)) {
 			return this.parent.resources.getOrFail('role.attendee');
 		}
 		throw new Error(`No role for user ${user.id}`);
