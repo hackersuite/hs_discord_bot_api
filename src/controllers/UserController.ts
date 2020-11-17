@@ -2,11 +2,11 @@ import * as auth from '@unicsmcr/hs_auth_client';
 import HackathonAPI from '../HackathonAPI';
 import { User } from '../entities/User';
 import { DiscordResource } from '../entities/DiscordResource';
+import { authClient } from '../utils/AuthClient';
 
 export interface APIUser {
 	authId: string;
 	discordId: string;
-	authLevel: auth.AuthLevel;
 	email: string;
 	name: string;
 	team?: string;
@@ -23,7 +23,7 @@ export class UserController {
 	public async getUsers() {
 		const [dbUsers, authUsers] = await Promise.all([
 			this.api.db.getRepository(User).find({ relations: ['roles'] }),
-			auth.getUsers(this.api.options.hsAuth.token)
+			authClient.getUsers(this.api.options.hsAuth.token)
 		]);
 
 		const authMap: Map<string, User> = new Map();
@@ -47,7 +47,7 @@ export class UserController {
 				where: { discordId },
 				relations: ['roles']
 			}),
-			auth.getUsers(this.api.options.hsAuth.token)
+			authClient.getUsers(this.api.options.hsAuth.token)
 		]);
 
 		const targetId = dbUser.authId;
@@ -61,7 +61,7 @@ export class UserController {
 	}
 
 	public async getAuthUser(authId: string) {
-		return (await auth.getUsers(this.api.options.hsAuth.token))
+		return (await authClient.getUsers(this.api.options.hsAuth.token))
 			.find(user => user.id === authId);
 	}
 
@@ -92,7 +92,7 @@ export class UserController {
 				const newRoles = [...roles];
 				// Now copy over relevant roles from existing relation
 				for (const existingRole of refreshUser.roles) {
-					// Any AuthLevel roles and team roles should be ignored, copy everything else
+					// Any auth roles and team roles should be ignored, copy everything else
 					if (!['role.organiser', 'role.volunteer', 'role.attendee'].includes(existingRole.name) &&
 						!existingRole.name.startsWith('role.teams')) {
 						newRoles.push(existingRole);
@@ -174,7 +174,6 @@ export class UserController {
 		return {
 			authId: authUser.id,
 			discordId: dbUser.discordId,
-			authLevel: authUser.authLevel,
 			email: authUser.email,
 			name: authUser.name,
 			team: authUser.team,
