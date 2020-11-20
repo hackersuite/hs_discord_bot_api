@@ -25,6 +25,14 @@ export function volunteer(): CreateGuildRoleData {
 	};
 }
 
+export function sponsor(): CreateGuildRoleData {
+	return {
+		name: 'Sponsor',
+		hoist: true,
+		permissions: 0
+	};
+}
+
 export function attendee(): CreateGuildRoleData {
 	return {
 		name: 'Attendee',

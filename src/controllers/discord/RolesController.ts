@@ -28,6 +28,7 @@ export class RolesController {
 		await this.ensure('role.organiser', templates.roles.organiser());
 		await this.ensure('role.volunteer', templates.roles.volunteer());
 		await this.ensure('role.attendee', templates.roles.attendee());
+		await this.ensure('role.sponsor', templates.roles.sponsor());
 		await this.ensure('role.muted', templates.roles.muted());
 
 		for (const language of languages) {

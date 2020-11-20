@@ -23,6 +23,7 @@ interface TokenResponse {
 
 enum DiscordRoleURI {
 	Organiser = 'hs:hs_discord:guild:organiser',
+	Sponsor = 'hs:hs_discord:guild:sponsor',
 	Volunteer = 'hs:hs_discord:guild:volunteer',
 	Attendee = 'hs:hs_discord:guild:attendee'
 }
@@ -118,6 +119,8 @@ export class OAuth2Controller {
 
 		if (resources.includes(DiscordRoleURI.Organiser)) {
 			return this.parent.resources.getOrFail('role.organiser');
+		} else if (resources.includes(DiscordRoleURI.Sponsor)) {
+			return this.parent.resources.getOrFail('role.sponsor');
 		} else if (resources.includes(DiscordRoleURI.Volunteer)) {
 			return this.parent.resources.getOrFail('role.volunteer');
 		} else if (resources.includes(DiscordRoleURI.Attendee)) {
