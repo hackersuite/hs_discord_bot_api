@@ -88,7 +88,7 @@ interface HackathonOptions {
 export function hackathonWelcome(options: HackathonOptions): CreateGuildChannelData {
 	return {
 		name: 'welcome',
-		topic: 'Welcome to StudentHack 2020\'s Discord server!',
+		topic: 'Welcome to GreatUniHack 2020\'s Discord server!',
 		parent_id: options.parentId,
 		permission_overwrites: publicReadonly(options.guildId, options.organiserId),
 		type: ChannelType.TEXT
