@@ -70,6 +70,13 @@ export class OAuth2Controller {
 		const roles = [await wrapError(this.getAccessLevelRole(authUser),
 			`Unable to find the Discord role for auth user ${authUser.id}`)];
 
+		const uris = await wrapError(authClient.getAuthorizedResources(this.api.options.hsAuth.token, ['hs:hs_discord:bot:sync'], authUser.id),
+			`Couldn't validate if ${authUser.id} had permissions to sync their Discord account`);
+		if (!uris.includes('hs:hs_discord:bot:sync')) {
+			const error = new Error(`User ${authUser.id} does not have permissions to sync their Discord account`);
+			throw new WrappedError(error.message, error);
+		}
+
 		// If the user is in a team
 		if (authUser.team) {
 			// Link their team to the database
