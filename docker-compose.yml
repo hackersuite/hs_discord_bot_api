@@ -11,6 +11,7 @@ services:
       - "${PORT}:${PORT}"
     networks:
       - internal
+      - hacker_suite
 
 # The network allows multiple containers to connect together
 networks:
