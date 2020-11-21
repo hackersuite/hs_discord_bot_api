@@ -19,3 +19,6 @@ networks:
   internal:
     name: docker_internal_hackathon
     driver: bridge
+  hacker_suite:
+    external:
+      name: hacker_suite
